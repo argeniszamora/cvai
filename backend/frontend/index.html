@@ -591,9 +591,12 @@
     async function fillSelect(id) {
       const sel = document.getElementById(id);
       try {
-        const data = await (await apiFetch(`/api/cvs`)).json();
+        const res = await apiFetch(`/api/cvs`);
+        if (!res.ok) { sel.innerHTML = `<option value="">— Error cargando CVs —</option>`; return; }
+        const data = await res.json();
         sel.innerHTML = `<option value="">— Seleccionar CV —</option>`+data.map(c=>`<option value="${c.id}">${c.filename}</option>`).join("");
-      } catch{}
+        if (data.length === 1) sel.value = data[0].id;
+      } catch(e) { sel.innerHTML = `<option value="">— Error: ${e.message} —</option>`; }
     }
 
     async function fillJobSelect(id) {

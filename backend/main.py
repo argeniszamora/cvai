@@ -147,13 +147,14 @@ async def upload_cv(file: UploadFile = File(...), db: AsyncSession = Depends(get
     }
 
 
-@app.get("/api/cvs", response_model=list[CVResponse])
+@app.get("/api/cvs")
 async def list_cvs(db: AsyncSession = Depends(get_db), user: User = Depends(require_auth)):
     if user.is_admin:
         result = await db.execute(select(CV).order_by(CV.uploaded_at.desc()))
     else:
         result = await db.execute(select(CV).where(CV.user_id == user.id).order_by(CV.uploaded_at.desc()))
-    return result.scalars().all()
+    cvs = result.scalars().all()
+    return [{"id": cv.id, "filename": cv.filename, "uploaded_at": cv.uploaded_at.isoformat() if cv.uploaded_at else None} for cv in cvs]
 
 
 @app.get("/api/cvs/{cv_id}", response_model=CVResponse)
