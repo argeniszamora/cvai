@@ -227,28 +227,48 @@ PERFIL IDEAL PARA:
 
 
 def search_jobs_chile(profession: str, skills: list[str], years_exp: int) -> list[dict]:
-    top_skills = ", ".join(skills[:5]) if skills else ""
+    top_skills = " ".join(skills[:3]) if skills else ""
+    nivel = "junior" if years_exp < 2 else ("senior" if years_exp > 5 else "")
+
     queries = [
-        f'ofertas trabajo "{profession}" Chile 2026 site:laborum.cl OR site:trabajando.com OR site:linkedin.com',
-        f'empleo "{profession}" Chile {top_skills} postular',
-        f'vacante "{profession}" Santiago Chile 2026',
+        f'{profession} oferta empleo Chile 2026 postular requisitos',
+        f'{profession} {top_skills} vacante Santiago Chile contrato',
+        f'{profession} {nivel} trabajo Chile laborum bumeran trabajando',
+        f'{profession} empleo Chile funciones sueldo renta',
+        f'{profession} hiring Chile computrabajo indeed linkedin',
     ]
+
+    job_signals = [
+        'postular', 'oferta', 'vacante', 'empleo', 'trabajo', 'hiring',
+        'requisitos', 'funciones', 'cargo', 'contrato', 'sueldo', 'renta',
+        'laborum', 'bumeran', 'trabajando', 'computrabajo', 'indeed',
+    ]
+
     results = []
     seen_urls = set()
+
     with DDGS() as ddgs:
         for query in queries:
+            if len(results) >= 10:
+                break
             try:
-                for r in ddgs.text(query, region="cl-es", max_results=4):
-                    if r["href"] not in seen_urls:
-                        seen_urls.add(r["href"])
-                        results.append({
-                            "titulo": r.get("title", ""),
-                            "descripcion": r.get("body", "")[:200],
-                            "url": r.get("href", ""),
-                            "fuente": _extract_domain(r.get("href", "")),
-                        })
+                for r in ddgs.text(query, region="cl-es", max_results=6):
+                    url = r.get("href", "")
+                    if url in seen_urls:
+                        continue
+                    combined = (r.get("title", "") + " " + r.get("body", "")).lower()
+                    if sum(1 for s in job_signals if s in combined) < 2:
+                        continue
+                    seen_urls.add(url)
+                    results.append({
+                        "titulo": r.get("title", ""),
+                        "descripcion": r.get("body", "")[:250],
+                        "url": url,
+                        "fuente": _extract_domain(url),
+                    })
             except Exception:
                 continue
+
     return results[:10]
 
 
