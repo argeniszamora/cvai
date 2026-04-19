@@ -52,12 +52,19 @@
   <!-- Navbar -->
   <nav class="glass sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
     <div class="flex items-center gap-3">
-      <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-blue flex items-center justify-center">
-        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/>
-        </svg>
-      </div>
-      <span class="text-lg font-bold text-light" style="font-family:'Space Grotesk',sans-serif">CVAi</span>
+      <svg width="32" height="32" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="lgApp" x1="0" y1="0" x2="34" y2="34" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#4ADE80"/>
+            <stop offset="100%" stop-color="#16A34A"/>
+          </linearGradient>
+        </defs>
+        <rect width="34" height="34" rx="10" fill="url(#lgApp)"/>
+        <text x="5" y="22" font-family="Space Grotesk, sans-serif" font-weight="800" font-size="13" fill="white" letter-spacing="-0.5">CV</text>
+        <circle cx="27" cy="10" r="4" fill="white" fill-opacity="0.25"/>
+        <circle cx="27" cy="10" r="2" fill="white"/>
+      </svg>
+      <span class="text-lg font-bold text-light tracking-tight" style="font-family:'Space Grotesk',sans-serif">CVAi</span>
     </div>
     <div class="flex items-center gap-2">
       <span class="w-2 h-2 rounded-full bg-accent pulse-dot"></span>

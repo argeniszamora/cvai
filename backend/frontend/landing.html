@@ -54,10 +54,19 @@
   <!-- NAV -->
   <nav class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 glass border-b border-white/5">
     <div class="flex items-center gap-2">
-      <div class="w-7 h-7 rounded-lg bg-accent flex items-center justify-center">
-        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/></svg>
-      </div>
-      <span class="font-grotesk font-bold text-lg text-white">CVAi</span>
+      <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="logoGrad" x1="0" y1="0" x2="34" y2="34" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#4ADE80"/>
+            <stop offset="100%" stop-color="#16A34A"/>
+          </linearGradient>
+        </defs>
+        <rect width="34" height="34" rx="10" fill="url(#logoGrad)"/>
+        <text x="5" y="22" font-family="Space Grotesk, sans-serif" font-weight="800" font-size="13" fill="white" letter-spacing="-0.5">CV</text>
+        <circle cx="27" cy="10" r="4" fill="white" fill-opacity="0.25"/>
+        <circle cx="27" cy="10" r="2" fill="white"/>
+      </svg>
+      <span class="font-grotesk font-bold text-lg text-white tracking-tight">CVAi</span>
     </div>
     <div class="hidden md:flex items-center gap-8 text-sm text-slate-400">
       <a href="#funciones" class="hover:text-white transition-colors cursor-pointer">Funciones</a>
@@ -395,13 +404,22 @@
   <footer class="border-t border-white/5 py-10 px-6">
     <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
       <div class="flex items-center gap-2">
-        <div class="w-6 h-6 rounded-lg bg-accent flex items-center justify-center">
-          <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/></svg>
-        </div>
+        <svg width="26" height="26" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="logoGradF" x1="0" y1="0" x2="34" y2="34" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#4ADE80"/>
+              <stop offset="100%" stop-color="#16A34A"/>
+            </linearGradient>
+          </defs>
+          <rect width="34" height="34" rx="10" fill="url(#logoGradF)"/>
+          <text x="5" y="22" font-family="Space Grotesk, sans-serif" font-weight="800" font-size="13" fill="white" letter-spacing="-0.5">CV</text>
+          <circle cx="27" cy="10" r="4" fill="white" fill-opacity="0.25"/>
+          <circle cx="27" cy="10" r="2" fill="white"/>
+        </svg>
         <span class="font-grotesk font-bold text-white">CVAi</span>
         <span class="text-slate-600 text-sm ml-2">© 2026</span>
       </div>
-      <p class="text-slate-600 text-xs text-center">Hecho en Chile para el mercado laboral chileno · Impulsado por Claude AI</p>
+      <p class="text-slate-600 text-xs text-center">Hecho en Chile para el mercado laboral chileno</p>
       <div class="flex gap-6 text-sm text-slate-500">
         <a href="/app" class="hover:text-white transition-colors cursor-pointer">App</a>
         <a href="#precios" class="hover:text-white transition-colors cursor-pointer">Precios</a>
