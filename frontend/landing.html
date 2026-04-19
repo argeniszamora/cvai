@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CVAi — Analiza y mejora tu CV con Inteligencia Artificial</title>
+  <meta name="description" content="CVAi analiza tu CV con IA, te dice cómo mejorar, simula tests ATC y te entrega una versión mejorada lista para postular en Chile."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { grotesk: ["Space Grotesk","sans-serif"], sans: ["DM Sans","sans-serif"] },
+          colors: {
+            accent: "#22C55E",
+            "accent-dark": "#16A34A",
+            dark: "#020617",
+            card: "rgba(15,23,42,0.7)",
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { font-family: "DM Sans", sans-serif; }
+    h1,h2,h3,h4 { font-family: "Space Grotesk", sans-serif; }
+    body { background: #020617; color: #f1f5f9; }
+    .grad-text { background: linear-gradient(135deg, #22C55E, #4ADE80, #86EFAC); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .grad-bg { background: linear-gradient(135deg, #022c1a, #0f172a 60%); }
+    .glass { background: rgba(15,23,42,0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.06); }
+    .glow { box-shadow: 0 0 40px rgba(34,197,94,0.15); }
+    .btn-primary { background: linear-gradient(135deg, #22C55E, #16A34A); color: #fff; transition: all .2s; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(34,197,94,0.35); }
+    .btn-outline { border: 1px solid rgba(34,197,94,0.4); color: #22C55E; transition: all .2s; }
+    .btn-outline:hover { background: rgba(34,197,94,0.08); }
+    .dot-grid { background-image: radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px); background-size: 28px 28px; }
+    .feature-card { background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.06); transition: all .25s; }
+    .feature-card:hover { border-color: rgba(34,197,94,0.25); transform: translateY(-3px); box-shadow: 0 12px 30px rgba(0,0,0,0.3); }
+    .step-line::after { content:""; position:absolute; left:50%; top:100%; width:1px; height:40px; background: linear-gradient(to bottom, rgba(34,197,94,0.4), transparent); }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+    .float { animation: float 4s ease-in-out infinite; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+    .fade-up { animation: fadeUp .6s ease forwards; }
+    .delay-1 { animation-delay: .1s; opacity: 0; }
+    .delay-2 { animation-delay: .2s; opacity: 0; }
+    .delay-3 { animation-delay: .3s; opacity: 0; }
+    .delay-4 { animation-delay: .4s; opacity: 0; }
+  </style>
+</head>
+<body class="dot-grid">
+
+  <!-- NAV -->
+  <nav class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 glass border-b border-white/5">
+    <div class="flex items-center gap-2">
+      <div class="w-7 h-7 rounded-lg bg-accent flex items-center justify-center">
+        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/></svg>
+      </div>
+      <span class="font-grotesk font-bold text-lg text-white">CVAi</span>
+    </div>
+    <div class="hidden md:flex items-center gap-8 text-sm text-slate-400">
+      <a href="#funciones" class="hover:text-white transition-colors cursor-pointer">Funciones</a>
+      <a href="#como-funciona" class="hover:text-white transition-colors cursor-pointer">Cómo funciona</a>
+      <a href="#precios" class="hover:text-white transition-colors cursor-pointer">Precios</a>
+    </div>
+    <a href="/app" class="btn-primary px-5 py-2 rounded-xl text-sm font-semibold cursor-pointer">
+      Probar gratis
+    </a>
+  </nav>
+
+  <!-- HERO -->
+  <section class="min-h-screen flex flex-col items-center justify-center text-center px-6 pt-24 pb-16 relative overflow-hidden">
+    <div class="absolute inset-0 overflow-hidden pointer-events-none">
+      <div class="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full bg-accent/5 blur-[100px]"></div>
+      <div class="absolute top-1/3 left-1/4 w-[300px] h-[300px] rounded-full bg-accent/3 blur-[80px]"></div>
+    </div>
+
+    <div class="relative z-10 max-w-4xl mx-auto">
+      <div class="inline-flex items-center gap-2 glass px-4 py-1.5 rounded-full text-xs text-accent font-medium mb-8 fade-up">
+        <span class="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></span>
+        Impulsado por Claude AI · Mercado laboral chileno 2026
+      </div>
+
+      <h1 class="font-grotesk text-5xl md:text-7xl font-bold leading-tight mb-6 fade-up delay-1">
+        Tu CV merece<br/>
+        <span class="grad-text">una segunda opinión</span>
+      </h1>
+
+      <p class="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed fade-up delay-2">
+        CVAi analiza tu CV con inteligencia artificial, detecta qué mejorar, simula los tests ATC de selección y te entrega una versión profesional lista para postular.
+      </p>
+
+      <div class="flex flex-col sm:flex-row gap-4 justify-center fade-up delay-3">
+        <a href="/app" class="btn-primary px-8 py-4 rounded-2xl text-base font-semibold cursor-pointer flex items-center justify-center gap-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+          Analiza tu CV gratis
+        </a>
+        <a href="#como-funciona" class="btn-outline px-8 py-4 rounded-2xl text-base font-semibold cursor-pointer flex items-center justify-center gap-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Ver demo
+        </a>
+      </div>
+
+      <!-- Stats -->
+      <div class="flex flex-wrap justify-center gap-8 mt-16 fade-up delay-4">
+        <div class="text-center">
+          <p class="font-grotesk text-3xl font-bold text-white">+500</p>
+          <p class="text-sm text-slate-500 mt-1">CVs analizados</p>
+        </div>
+        <div class="w-px bg-white/10 hidden sm:block"></div>
+        <div class="text-center">
+          <p class="font-grotesk text-3xl font-bold text-white">3 min</p>
+          <p class="text-sm text-slate-500 mt-1">Análisis completo</p>
+        </div>
+        <div class="w-px bg-white/10 hidden sm:block"></div>
+        <div class="text-center">
+          <p class="font-grotesk text-3xl font-bold text-white">94%</p>
+          <p class="text-sm text-slate-500 mt-1">Satisfacción usuarios</p>
+        </div>
+        <div class="w-px bg-white/10 hidden sm:block"></div>
+        <div class="text-center">
+          <p class="font-grotesk text-3xl font-bold text-white">100%</p>
+          <p class="text-sm text-slate-500 mt-1">Mercado chileno</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FUNCIONES -->
+  <section id="funciones" class="py-24 px-6">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-16">
+        <p class="text-accent text-sm font-semibold uppercase tracking-widest mb-3">Funcionalidades</p>
+        <h2 class="font-grotesk text-4xl md:text-5xl font-bold">Todo lo que necesitas para<br/>conseguir el trabajo</h2>
+      </div>
+
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <div class="feature-card rounded-2xl p-6">
+          <div class="w-10 h-10 rounded-xl bg-accent/15 flex items-center justify-center mb-4">
+            <svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+          </div>
+          <h3 class="font-grotesk font-bold text-lg mb-2">Evaluación HR profesional</h3>
+          <p class="text-slate-400 text-sm leading-relaxed">Tu CV revisado como lo haría un reclutador con 20 años de experiencia. Score por sección, puntos a mejorar y consejo para la entrevista.</p>
+        </div>
+
+        <div class="feature-card rounded-2xl p-6">
+          <div class="w-10 h-10 rounded-xl bg-accent/15 flex items-center justify-center mb-4">
+            <svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+          </div>
+          <h3 class="font-grotesk font-bold text-lg mb-2">Simulación Tests ATC</h3>
+          <p class="text-slate-400 text-sm leading-relaxed">Predice tu rendimiento en las pruebas de selección: aptitud verbal, numérica, razonamiento lógico y competencias conductuales.</p>
+        </div>
+
+        <div class="feature-card rounded-2xl p-6">
+          <div class="w-10 h-10 rounded-xl bg-accent/15 flex items-center justify-center mb-4">
+            <svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+          </div>
+          <h3 class="font-grotesk font-bold text-lg mb-2">CV mejorado con IA</h3>
+          <p class="text-slate-400 text-sm leading-relaxed">Recibe una versión reescrita de tu CV con logros e impacto medible, keywords del sector y perfil profesional. Descarga en formato DOCX.</p>
+        </div>
+
+        <div class="feature-card rounded-2xl p-6">
+          <div class="w-10 h-10 rounded-xl bg-accent/15 flex items-center justify-center mb-4">
+            <svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+          </div>
+          <h3 class="font-grotesk font-bold text-lg mb-2">Match con ofertas de trabajo</h3>
+          <p class="text-slate-400 text-sm leading-relaxed">Compara tu CV contra una oferta laboral específica y obtén un score de compatibilidad con fortalezas y brechas detectadas.</p>
+        </div>
+
+        <div class="feature-card rounded-2xl p-6">
+          <div class="w-10 h-10 rounded-xl bg-accent/15 flex items-center justify-center mb-4">
+            <svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </div>
+          <h3 class="font-grotesk font-bold text-lg mb-2">Búsqueda de empleos Chile</h3>
+          <p class="text-slate-400 text-sm leading-relaxed">Encuentra ofertas reales en Laborum, Trabajando y LinkedIn adaptadas a tu perfil profesional y experiencia.</p>
+        </div>
+
+        <div class="feature-card rounded-2xl p-6">
+          <div class="w-10 h-10 rounded-xl bg-accent/15 flex items-center justify-center mb-4">
+            <svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <h3 class="font-grotesk font-bold text-lg mb-2">Estimación salarial</h3>
+          <p class="text-slate-400 text-sm leading-relaxed">Conoce el rango salarial estimado para tu perfil en el mercado laboral chileno 2026 para negociar con confianza.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- CÓMO FUNCIONA -->
+  <section id="como-funciona" class="py-24 px-6 grad-bg">
+    <div class="max-w-4xl mx-auto">
+      <div class="text-center mb-16">
+        <p class="text-accent text-sm font-semibold uppercase tracking-widest mb-3">Proceso</p>
+        <h2 class="font-grotesk text-4xl md:text-5xl font-bold">En 3 minutos tienes<br/>tu análisis completo</h2>
+      </div>
+
+      <div class="space-y-6">
+        <div class="glass rounded-2xl p-6 flex gap-5 items-start">
+          <div class="w-10 h-10 rounded-xl bg-accent flex items-center justify-center shrink-0 font-grotesk font-bold text-white text-sm">1</div>
+          <div>
+            <h3 class="font-grotesk font-bold text-lg mb-1">Sube tu CV</h3>
+            <p class="text-slate-400 text-sm leading-relaxed">Arrastra o selecciona tu CV en formato PDF, DOCX o TXT. Soportamos cualquier formato que tengas.</p>
+          </div>
+        </div>
+
+        <div class="glass rounded-2xl p-6 flex gap-5 items-start">
+          <div class="w-10 h-10 rounded-xl bg-accent flex items-center justify-center shrink-0 font-grotesk font-bold text-white text-sm">2</div>
+          <div>
+            <h3 class="font-grotesk font-bold text-lg mb-1">La IA analiza todo</h3>
+            <p class="text-slate-400 text-sm leading-relaxed">En menos de 40 segundos Claude AI extrae tus datos, evalúa cada sección, simula los tests ATC y revisa tu CV como un experto HR.</p>
+          </div>
+        </div>
+
+        <div class="glass rounded-2xl p-6 flex gap-5 items-start">
+          <div class="w-10 h-10 rounded-xl bg-accent flex items-center justify-center shrink-0 font-grotesk font-bold text-white text-sm">3</div>
+          <div>
+            <h3 class="font-grotesk font-bold text-lg mb-1">Descarga y postula</h3>
+            <p class="text-slate-400 text-sm leading-relaxed">Recibe tu CV mejorado en DOCX, el reporte ATC y el reporte HR completo. Todo listo para enviarlo a la empresa.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TESTIMONIOS -->
+  <section class="py-24 px-6">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-16">
+        <p class="text-accent text-sm font-semibold uppercase tracking-widest mb-3">Testimonios</p>
+        <h2 class="font-grotesk text-4xl font-bold">Lo que dicen quienes ya lo usaron</h2>
+      </div>
+      <div class="grid md:grid-cols-3 gap-6">
+
+        <div class="glass rounded-2xl p-6">
+          <div class="flex gap-1 mb-4">
+            <svg class="w-4 h-4 text-yellow-400 fill-yellow-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-yellow-400 fill-yellow-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-yellow-400 fill-yellow-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-yellow-400 fill-yellow-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-yellow-400 fill-yellow-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+          </div>
+          <p class="text-sm text-slate-300 leading-relaxed mb-4">"Llevaba 3 meses postulando sin respuesta. Usé CVAi, mejoré mi CV y en 2 semanas me llamaron para una entrevista en Falabella."</p>
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-xs">CP</div>
+            <div>
+              <p class="text-xs font-semibold text-white">Camila P.</p>
+              <p class="text-xs text-slate-500">Analista Comercial, Santiago</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass rounded-2xl p-6">
+          <div class="flex gap-1 mb-4">
+            <svg class="w-4 h-4 text-yellow-400 fill-yellow-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-yellow-400 fill-yellow-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-yellow-400 fill-yellow-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-yellow-400 fill-yellow-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-yellow-400 fill-yellow-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+          </div>
+          <p class="text-sm text-slate-300 leading-relaxed mb-4">"El test ATC me ayudó a prepararme para las pruebas psicológicas. Sabía exactamente en qué estaba débil antes de ir a la entrevista."</p>
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-xs">MR</div>
+            <div>
+              <p class="text-xs font-semibold text-white">Matías R.</p>
+              <p class="text-xs text-slate-500">Ingeniero Industrial, Concepción</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass rounded-2xl p-6">
+          <div class="flex gap-1 mb-4">
+            <svg class="w-4 h-4 text-yellow-400 fill-yellow-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-yellow-400 fill-yellow-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-yellow-400 fill-yellow-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-yellow-400 fill-yellow-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-4 h-4 text-yellow-400 fill-yellow-400" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+          </div>
+          <p class="text-sm text-slate-300 leading-relaxed mb-4">"No tenía idea que en mi CV faltaban palabras clave básicas del sector. Con CVAi lo vi al instante y el CV mejorado quedó mucho más profesional."</p>
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-xs">VL</div>
+            <div>
+              <p class="text-xs font-semibold text-white">Valentina L.</p>
+              <p class="text-xs text-slate-500">Contadora, Viña del Mar</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- PRECIOS -->
+  <section id="precios" class="py-24 px-6 grad-bg">
+    <div class="max-w-4xl mx-auto">
+      <div class="text-center mb-16">
+        <p class="text-accent text-sm font-semibold uppercase tracking-widest mb-3">Precios</p>
+        <h2 class="font-grotesk text-4xl md:text-5xl font-bold">Simple y accesible</h2>
+        <p class="text-slate-400 mt-4">Empieza gratis. Paga solo cuando quieras más.</p>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+
+        <div class="glass rounded-2xl p-8">
+          <p class="text-slate-400 text-sm font-medium mb-2">Gratis</p>
+          <p class="font-grotesk text-4xl font-bold text-white mb-1">$0</p>
+          <p class="text-slate-500 text-sm mb-6">Para siempre</p>
+          <ul class="space-y-3 mb-8">
+            <li class="flex items-center gap-3 text-sm text-slate-300">
+              <svg class="w-4 h-4 text-accent shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+              1 análisis completo de CV
+            </li>
+            <li class="flex items-center gap-3 text-sm text-slate-300">
+              <svg class="w-4 h-4 text-accent shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+              Evaluación ATC + HR
+            </li>
+            <li class="flex items-center gap-3 text-sm text-slate-300">
+              <svg class="w-4 h-4 text-accent shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+              Búsqueda de empleos
+            </li>
+            <li class="flex items-center gap-3 text-sm text-slate-500">
+              <svg class="w-4 h-4 text-slate-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              Descarga de reportes
+            </li>
+            <li class="flex items-center gap-3 text-sm text-slate-500">
+              <svg class="w-4 h-4 text-slate-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              CV mejorado descargable
+            </li>
+          </ul>
+          <a href="/app" class="btn-outline w-full py-3 rounded-xl text-sm font-semibold cursor-pointer flex items-center justify-center">
+            Empezar gratis
+          </a>
+        </div>
+
+        <div class="rounded-2xl p-8 relative overflow-hidden glow" style="background: linear-gradient(135deg, rgba(34,197,94,0.12), rgba(15,23,42,0.9)); border: 1px solid rgba(34,197,94,0.3);">
+          <div class="absolute top-4 right-4 bg-accent text-white text-xs font-bold px-3 py-1 rounded-full">Popular</div>
+          <p class="text-accent text-sm font-medium mb-2">Pro</p>
+          <p class="font-grotesk text-4xl font-bold text-white mb-1">$4.990</p>
+          <p class="text-slate-500 text-sm mb-6">CLP / mes</p>
+          <ul class="space-y-3 mb-8">
+            <li class="flex items-center gap-3 text-sm text-slate-300">
+              <svg class="w-4 h-4 text-accent shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+              CVs ilimitados
+            </li>
+            <li class="flex items-center gap-3 text-sm text-slate-300">
+              <svg class="w-4 h-4 text-accent shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+              Descarga reportes ATC + HR
+            </li>
+            <li class="flex items-center gap-3 text-sm text-slate-300">
+              <svg class="w-4 h-4 text-accent shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+              CV mejorado descargable
+            </li>
+            <li class="flex items-center gap-3 text-sm text-slate-300">
+              <svg class="w-4 h-4 text-accent shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+              Match con ofertas laborales
+            </li>
+            <li class="flex items-center gap-3 text-sm text-slate-300">
+              <svg class="w-4 h-4 text-accent shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+              Soporte prioritario
+            </li>
+          </ul>
+          <a href="/app" class="btn-primary w-full py-3 rounded-xl text-sm font-semibold cursor-pointer flex items-center justify-center">
+            Comenzar ahora
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA FINAL -->
+  <section class="py-24 px-6">
+    <div class="max-w-3xl mx-auto text-center">
+      <div class="glass rounded-3xl p-12 relative overflow-hidden">
+        <div class="absolute inset-0 pointer-events-none">
+          <div class="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 rounded-full bg-accent/8 blur-[60px]"></div>
+        </div>
+        <div class="relative z-10">
+          <h2 class="font-grotesk text-4xl md:text-5xl font-bold mb-4">
+            Tu próximo trabajo<br/><span class="grad-text">empieza con un buen CV</span>
+          </h2>
+          <p class="text-slate-400 text-lg mb-8">Analiza tu CV ahora de forma gratuita y descubre qué necesitas cambiar para destacar en el mercado laboral chileno.</p>
+          <a href="/app" class="btn-primary inline-flex items-center gap-2 px-10 py-4 rounded-2xl text-base font-semibold cursor-pointer">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+            Analiza tu CV gratis ahora
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-white/5 py-10 px-6">
+    <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-2">
+        <div class="w-6 h-6 rounded-lg bg-accent flex items-center justify-center">
+          <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/></svg>
+        </div>
+        <span class="font-grotesk font-bold text-white">CVAi</span>
+        <span class="text-slate-600 text-sm ml-2">© 2026</span>
+      </div>
+      <p class="text-slate-600 text-xs text-center">Hecho en Chile para el mercado laboral chileno · Impulsado por Claude AI</p>
+      <div class="flex gap-6 text-sm text-slate-500">
+        <a href="/app" class="hover:text-white transition-colors cursor-pointer">App</a>
+        <a href="#precios" class="hover:text-white transition-colors cursor-pointer">Precios</a>
+        <a href="mailto:contacto@cvai.cl" class="hover:text-white transition-colors cursor-pointer">Contacto</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Smooth scroll
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+      a.addEventListener("click", e => {
+        e.preventDefault();
+        document.querySelector(a.getAttribute("href"))?.scrollIntoView({ behavior: "smooth" });
+      });
+    });
+  </script>
+</body>
+</html>

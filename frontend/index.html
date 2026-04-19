@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CVAi — Evaluador Inteligente de CVs</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { heading: ["Space Grotesk","sans-serif"], body: ["DM Sans","sans-serif"] },
+          colors: {
+            dark: "#020617", card: "#0F172A", border: "#1E293B",
+            accent: "#22C55E", blue: "#3B82F6", purple: "#A855F7",
+            muted: "#64748B", light: "#F8FAFC"
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    * { font-family: "DM Sans", sans-serif; }
+    h1,h2,h3,h4,h5 { font-family: "Space Grotesk", sans-serif; }
+    body { background: #020617; color: #F8FAFC; }
+    .glass { background: rgba(15,23,42,0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); }
+    .glass-light { background: rgba(255,255,255,0.04); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.06); }
+    .glow-green { box-shadow: 0 0 24px rgba(34,197,94,0.2); }
+    .glow-blue  { box-shadow: 0 0 24px rgba(59,130,246,0.2); }
+    .tab-active { background: rgba(34,197,94,0.15); color: #22C55E; border-color: rgba(34,197,94,0.4); }
+    .tab-inactive { color: #64748B; border-color: transparent; }
+    .tab-inactive:hover { color: #F8FAFC; background: rgba(255,255,255,0.05); }
+    .btn-primary { background: linear-gradient(135deg,#22C55E,#16A34A); color:#fff; transition: all 0.2s; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(34,197,94,0.35); }
+    .btn-primary:disabled { opacity:0.5; transform:none; box-shadow:none; }
+    .bar-fill { transition: width 1s cubic-bezier(.4,0,.2,1); }
+    .drop-zone { border: 2px dashed rgba(255,255,255,0.1); transition: all 0.2s; }
+    .drop-zone:hover { border-color: #22C55E; background: rgba(34,197,94,0.05); }
+    .badge-green { background:rgba(34,197,94,0.15); color:#22C55E; border:1px solid rgba(34,197,94,0.3); }
+    .badge-blue  { background:rgba(59,130,246,0.15); color:#60A5FA; border:1px solid rgba(59,130,246,0.3); }
+    .badge-red   { background:rgba(239,68,68,0.15); color:#F87171; border:1px solid rgba(239,68,68,0.3); }
+    .badge-yellow{ background:rgba(234,179,8,0.15); color:#FBBF24; border:1px solid rgba(234,179,8,0.3); }
+    .badge-muted { background:rgba(100,116,139,0.15); color:#94A3B8; border:1px solid rgba(100,116,139,0.3); }
+    ::-webkit-scrollbar { width:4px; } ::-webkit-scrollbar-track { background:#0F172A; } ::-webkit-scrollbar-thumb { background:#1E293B; border-radius:2px; }
+    @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:.4} }
+    .pulse-dot { animation: pulse-dot 1.5s infinite; }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="glass sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-blue flex items-center justify-center">
+        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/>
+        </svg>
+      </div>
+      <span class="text-lg font-bold text-light" style="font-family:'Space Grotesk',sans-serif">CVAi</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="w-2 h-2 rounded-full bg-accent pulse-dot"></span>
+      <span class="text-xs text-muted">Claude AI · Chile</span>
+    </div>
+  </nav>
+
+  <div class="max-w-5xl mx-auto px-4 py-8">
+
+    <!-- Tabs -->
+    <div class="flex flex-wrap gap-1 mb-8 p-1 glass-light rounded-xl w-fit">
+      <button onclick="showTab('upload')"    id="tab-upload"    class="tab-active   px-4 py-2 rounded-lg text-sm font-medium border transition-all cursor-pointer">Subir CV</button>
+      <button onclick="showTab('jobs')"      id="tab-jobs"      class="tab-inactive px-4 py-2 rounded-lg text-sm font-medium border transition-all cursor-pointer">Ofertas</button>
+      <button onclick="showTab('evaluate')"  id="tab-evaluate"  class="tab-inactive px-4 py-2 rounded-lg text-sm font-medium border transition-all cursor-pointer">Evaluar</button>
+      <button onclick="showTab('atc')"       id="tab-atc"       class="tab-inactive px-4 py-2 rounded-lg text-sm font-medium border transition-all cursor-pointer">Test ATC</button>
+      <button onclick="showTab('hrreview')"  id="tab-hrreview"  class="tab-inactive px-4 py-2 rounded-lg text-sm font-medium border transition-all cursor-pointer">Revisión HR</button>
+      <button onclick="showTab('jobsearch')" id="tab-jobsearch" class="tab-inactive px-4 py-2 rounded-lg text-sm font-medium border transition-all cursor-pointer">Buscar Empleos</button>
+      <button onclick="showTab('history')"   id="tab-history"   class="tab-inactive px-4 py-2 rounded-lg text-sm font-medium border transition-all cursor-pointer">Historial</button>
+    </div>
+
+    <!-- TAB: Subir CV -->
+    <div id="tab-content-upload">
+      <div class="grid lg:grid-cols-2 gap-6">
+        <div class="glass rounded-2xl p-6">
+          <h2 class="text-xl font-bold text-light mb-1">Analiza tu CV</h2>
+          <p class="text-sm text-muted mb-4">Sube tu CV y en segundos obtienes un análisis completo con IA</p>
+          <div class="flex gap-2 mb-5 flex-wrap">
+            <span class="badge-green text-xs px-2 py-1 rounded-full">Extracción de datos</span>
+            <span class="badge-blue  text-xs px-2 py-1 rounded-full">Test ATC</span>
+            <span class="badge-muted text-xs px-2 py-1 rounded-full">Revisión HR</span>
+          </div>
+          <div class="drop-zone rounded-xl p-8 text-center cursor-pointer mb-4" onclick="document.getElementById('cv-file').click()">
+            <svg class="w-10 h-10 text-muted mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+            </svg>
+            <p class="text-sm text-muted">Arrastra o haz clic para subir</p>
+            <p class="text-xs text-muted/50 mt-1">PDF · DOCX · TXT</p>
+            <input type="file" id="cv-file" accept=".pdf,.docx,.txt" class="hidden" onchange="handleFileSelect(this)"/>
+          </div>
+          <div id="file-name" class="hidden mb-4 flex items-center gap-2 text-sm text-accent">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+            <span id="file-name-text" class="truncate"></span>
+          </div>
+          <button onclick="uploadCV()" id="upload-btn" class="btn-primary w-full py-3 rounded-xl font-semibold cursor-pointer flex items-center justify-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+            Subir y Analizar CV
+          </button>
+          <div id="upload-msg" class="hidden mt-3 text-xs text-center text-muted py-2 rounded-lg glass-light"></div>
+
+          <!-- Progress steps -->
+          <div id="upload-progress" class="hidden mt-4 glass-light rounded-xl p-4 border border-white/10">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-semibold text-light">Analizando tu CV con IA</span>
+              <span id="progress-pct" class="text-xs font-bold text-accent">0%</span>
+            </div>
+            <div class="w-full bg-white/10 rounded-full h-1.5 mb-4 overflow-hidden">
+              <div id="progress-bar" class="h-1.5 rounded-full bg-accent transition-all duration-700 ease-out" style="width:0%"></div>
+            </div>
+            <div class="space-y-2.5" id="progress-steps">
+              <div id="step-upload" class="flex items-center gap-3 text-xs text-muted">
+                <div class="w-5 h-5 rounded-full border border-white/20 flex items-center justify-center shrink-0" id="icon-upload">
+                  <div class="w-2 h-2 rounded-full bg-white/30"></div>
+                </div>
+                <span>Subiendo archivo</span>
+              </div>
+              <div id="step-extract" class="flex items-center gap-3 text-xs text-muted">
+                <div class="w-5 h-5 rounded-full border border-white/20 flex items-center justify-center shrink-0" id="icon-extract">
+                  <div class="w-2 h-2 rounded-full bg-white/30"></div>
+                </div>
+                <span>Extrayendo datos del CV</span>
+              </div>
+              <div id="step-atc" class="flex items-center gap-3 text-xs text-muted">
+                <div class="w-5 h-5 rounded-full border border-white/20 flex items-center justify-center shrink-0" id="icon-atc">
+                  <div class="w-2 h-2 rounded-full bg-white/30"></div>
+                </div>
+                <span>Evaluando tests ATC</span>
+              </div>
+              <div id="step-hr" class="flex items-center gap-3 text-xs text-muted">
+                <div class="w-5 h-5 rounded-full border border-white/20 flex items-center justify-center shrink-0" id="icon-hr">
+                  <div class="w-2 h-2 rounded-full bg-white/30"></div>
+                </div>
+                <span>Revisión profesional HR</span>
+              </div>
+              <div id="step-done" class="flex items-center gap-3 text-xs text-muted">
+                <div class="w-5 h-5 rounded-full border border-white/20 flex items-center justify-center shrink-0" id="icon-done">
+                  <div class="w-2 h-2 rounded-full bg-white/30"></div>
+                </div>
+                <span>Generando resultados</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CVs subidos -->
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-semibold text-muted uppercase tracking-wider">CVs subidos</h3>
+            <button onclick="loadCVs()" class="text-xs text-accent hover:underline cursor-pointer">Actualizar</button>
+          </div>
+          <div id="cv-list" class="space-y-2"></div>
+        </div>
+      </div>
+
+      <!-- Resultado análisis automático -->
+      <div id="upload-analysis" class="hidden mt-8 space-y-4"></div>
+    </div>
+
+    <!-- TAB: Ofertas -->
+    <div id="tab-content-jobs" class="hidden">
+      <div class="grid lg:grid-cols-2 gap-6">
+        <div class="glass rounded-2xl p-6">
+          <h2 class="text-xl font-bold text-light mb-1">Agregar oferta</h2>
+          <p class="text-sm text-muted mb-5">Pega una oferta a la que quieras postular</p>
+          <div class="space-y-3">
+            <input id="job-title" type="text" placeholder="Título del puesto" class="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-light placeholder-muted focus:outline-none focus:border-accent transition-colors"/>
+            <textarea id="job-desc" rows="3" placeholder="Descripción del cargo..." class="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-light placeholder-muted focus:outline-none focus:border-accent transition-colors resize-none"></textarea>
+            <textarea id="job-req" rows="3" placeholder="Requisitos del cargo..." class="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-light placeholder-muted focus:outline-none focus:border-accent transition-colors resize-none"></textarea>
+            <button onclick="createJob()" class="btn-primary w-full py-3 rounded-xl font-semibold cursor-pointer">Guardar oferta</button>
+            <div id="job-msg" class="hidden text-xs text-center text-muted py-2 rounded-lg glass-light"></div>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-semibold text-muted uppercase tracking-wider">Ofertas guardadas</h3>
+            <button onclick="loadJobs()" class="text-xs text-accent hover:underline cursor-pointer">Actualizar</button>
+          </div>
+          <div id="job-list" class="space-y-2"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: Evaluar -->
+    <div id="tab-content-evaluate" class="hidden">
+      <div class="glass rounded-2xl p-6 max-w-xl">
+        <h2 class="text-xl font-bold text-light mb-1">Evaluar CV vs Oferta</h2>
+        <p class="text-sm text-muted mb-5">Claude compara tu CV contra los requisitos del puesto</p>
+        <div class="space-y-3">
+          <select id="eval-cv" class="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-light focus:outline-none focus:border-accent cursor-pointer">
+            <option value="">— Seleccionar CV —</option>
+          </select>
+          <select id="eval-job" class="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-light focus:outline-none focus:border-accent cursor-pointer">
+            <option value="">— Seleccionar oferta —</option>
+          </select>
+          <button onclick="runEvaluation()" id="eval-btn" class="btn-primary w-full py-3 rounded-xl font-semibold cursor-pointer">Evaluar con Claude AI</button>
+        </div>
+      </div>
+      <div id="eval-result" class="hidden mt-6"></div>
+    </div>
+
+    <!-- TAB: ATC -->
+    <div id="tab-content-atc" class="hidden">
+      <div class="glass rounded-2xl p-6 max-w-xl">
+        <h2 class="text-xl font-bold text-light mb-1">Test ATC</h2>
+        <p class="text-sm text-muted mb-5">Estima si pasarías los tests de selección: aptitud verbal, numérica, lógica y personalidad</p>
+        <div class="space-y-3">
+          <select id="atc-cv" class="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-light focus:outline-none focus:border-accent cursor-pointer">
+            <option value="">— Seleccionar CV —</option>
+          </select>
+          <button onclick="runATC()" id="atc-btn" class="btn-primary w-full py-3 rounded-xl font-semibold cursor-pointer">Analizar con IA</button>
+        </div>
+      </div>
+      <div id="atc-result" class="hidden mt-6"></div>
+    </div>
+
+    <!-- TAB: HR Review -->
+    <div id="tab-content-hrreview" class="hidden">
+      <div class="glass rounded-2xl p-6 max-w-xl">
+        <h2 class="text-xl font-bold text-light mb-1">Revisión Profesional HR</h2>
+        <p class="text-sm text-muted mb-5">Un experto HR evalúa tu CV y te da recomendaciones para el mercado chileno</p>
+        <div class="space-y-3">
+          <select id="hr-cv" class="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-light focus:outline-none focus:border-accent cursor-pointer">
+            <option value="">— Seleccionar CV —</option>
+          </select>
+          <button onclick="runHRReview()" id="hr-btn" class="btn-primary w-full py-3 rounded-xl font-semibold cursor-pointer">Revisar CV</button>
+        </div>
+      </div>
+      <div id="hr-result" class="hidden mt-6"></div>
+    </div>
+
+    <!-- TAB: Buscar Empleos -->
+    <div id="tab-content-jobsearch" class="hidden">
+      <div class="glass rounded-2xl p-6 max-w-xl">
+        <h2 class="text-xl font-bold text-light mb-1">Buscar Empleos en Chile</h2>
+        <p class="text-sm text-muted mb-5">Busca ofertas reales en LinkedIn, Laborum, Trabajando.com según tu perfil</p>
+        <div class="space-y-3">
+          <select id="search-cv" class="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-light focus:outline-none focus:border-accent cursor-pointer">
+            <option value="">— Seleccionar CV —</option>
+          </select>
+          <button onclick="runJobSearch()" id="search-btn" class="btn-primary w-full py-3 rounded-xl font-semibold cursor-pointer">Buscar ofertas</button>
+        </div>
+      </div>
+      <div id="search-result" class="hidden mt-6"></div>
+    </div>
+
+    <!-- TAB: Historial -->
+    <div id="tab-content-history" class="hidden">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-bold text-light">Historial</h2>
+        <button onclick="loadHistory()" class="text-xs text-accent hover:underline cursor-pointer">Actualizar</button>
+      </div>
+      <div id="history-list" class="space-y-3"></div>
+    </div>
+
+  </div>
+
+  <script>
+    const API = window.location.hostname === "localhost" ? "http://localhost:8003" : "";
+    const TABS = ["upload","jobs","evaluate","atc","hrreview","jobsearch","history"];
+
+    function showTab(name) {
+      TABS.forEach(t => {
+        document.getElementById(`tab-content-${t}`).classList.add("hidden");
+        const btn = document.getElementById(`tab-${t}`);
+        btn.className = btn.className.replace("tab-active","tab-inactive");
+        if (!btn.className.includes("tab-inactive")) btn.classList.add("tab-inactive");
+      });
+      document.getElementById(`tab-content-${name}`).classList.remove("hidden");
+      const active = document.getElementById(`tab-${name}`);
+      active.className = active.className.replace("tab-inactive","tab-active");
+      if (name==="upload")    loadCVs();
+      if (name==="jobs")      loadJobs();
+      if (name==="evaluate")  { fillSelect("eval-cv"); fillJobSelect("eval-job"); }
+      if (name==="atc")       fillSelect("atc-cv");
+      if (name==="hrreview")  fillSelect("hr-cv");
+      if (name==="jobsearch") fillSelect("search-cv");
+      if (name==="history")   loadHistory();
+    }
+
+    function handleFileSelect(input) {
+      if (input.files[0]) {
+        document.getElementById("file-name-text").textContent = input.files[0].name;
+        document.getElementById("file-name").classList.remove("hidden");
+      }
+    }
+
+    function setStep(id, state) {
+      const icon = document.getElementById(`icon-${id}`);
+      const step = document.getElementById(`step-${id}`);
+      if (!icon || !step) return;
+      if (state === "active") {
+        step.classList.remove("text-muted"); step.classList.add("text-light");
+        icon.className = "w-5 h-5 rounded-full border border-accent flex items-center justify-center shrink-0";
+        icon.innerHTML = `<svg class="w-3 h-3 text-accent animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>`;
+      } else if (state === "done") {
+        step.classList.remove("text-muted"); step.classList.add("text-accent");
+        icon.className = "w-5 h-5 rounded-full bg-accent flex items-center justify-center shrink-0";
+        icon.innerHTML = `<svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>`;
+      }
+    }
+    function setProgress(pct) {
+      document.getElementById("progress-bar").style.width = pct + "%";
+      document.getElementById("progress-pct").textContent = pct + "%";
+    }
+
+    async function uploadCV() {
+      const file = document.getElementById("cv-file").files[0];
+      const msg = document.getElementById("upload-msg");
+      const analysis = document.getElementById("upload-analysis");
+      const btn = document.getElementById("upload-btn");
+      const progress = document.getElementById("upload-progress");
+      if (!file) { showMsg(msg,"Selecciona un archivo primero"); return; }
+
+      // Reset steps
+      ["upload","extract","atc","hr","done"].forEach(s => {
+        const icon = document.getElementById(`icon-${s}`);
+        const step = document.getElementById(`step-${s}`);
+        if (icon) { icon.className = "w-5 h-5 rounded-full border border-white/20 flex items-center justify-center shrink-0"; icon.innerHTML = `<div class="w-2 h-2 rounded-full bg-white/30"></div>`; }
+        if (step) { step.classList.remove("text-light","text-accent"); step.classList.add("text-muted"); }
+      });
+      setProgress(0);
+
+      btn.disabled = true;
+      btn.innerHTML = `<svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Analizando...`;
+      msg.classList.add("hidden");
+      analysis.classList.add("hidden");
+      progress.classList.remove("hidden");
+
+      setStep("upload", "active"); setProgress(5);
+
+      const form = new FormData();
+      form.append("file", file);
+
+      // Simulated step timing (backend hace todo en 1 request ~35s)
+      const stepTimings = [
+        { step: "upload",  doneAt: 1500,  pct: 15 },
+        { step: "extract", activeAt: 1500, doneAt: 8000,  pct: 35 },
+        { step: "atc",     activeAt: 8000, doneAt: 20000, pct: 65 },
+        { step: "hr",      activeAt: 20000, doneAt: 33000, pct: 88 },
+        { step: "done",    activeAt: 33000, pct: 95 },
+      ];
+      const timers = [];
+      stepTimings.forEach(({ step, activeAt, doneAt, pct }) => {
+        if (activeAt) timers.push(setTimeout(() => { setStep(step, "active"); setProgress(pct - 10); }, activeAt));
+        if (doneAt)   timers.push(setTimeout(() => { setStep(step, "done");   setProgress(pct); }, doneAt));
+      });
+
+      try {
+        const res = await fetch(`${API}/api/cvs/upload`, { method: "POST", body: form });
+        const data = await res.json();
+        timers.forEach(clearTimeout);
+        if (!res.ok) throw new Error(data.detail);
+        ["upload","extract","atc","hr","done"].forEach(s => setStep(s, "done"));
+        setProgress(100);
+        await new Promise(r => setTimeout(r, 600));
+        progress.classList.add("hidden");
+        showMsg(msg, `✓ "${data.filename}" analizado correctamente`);
+        msg.classList.remove("hidden");
+        loadCVs();
+        renderUploadAnalysis(data);
+      } catch(e) {
+        timers.forEach(clearTimeout);
+        progress.classList.add("hidden");
+        showMsg(msg, "Error: " + e.message);
+        msg.classList.remove("hidden");
+      }
+      btn.disabled = false;
+      btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg> Subir y Analizar CV`;
+    }
+
+    function renderUploadAnalysis(data) {
+      const el = document.getElementById("upload-analysis");
+      const ext = data.extracted||{};
+      const atc = data.atc||{};
+      const hr  = data.hr_review||{};
+
+      el.innerHTML = `
+        <!-- Perfil -->
+        <div class="glass rounded-2xl p-6">
+          <div class="flex items-center gap-2 mb-4">
+            <div class="w-2 h-2 rounded-full bg-accent"></div>
+            <h3 class="font-bold text-light">Perfil extraído</h3>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+            ${[["Nombre",ext.name||"—"],["Profesión",ext.main_profession||"—"],["Experiencia",(ext.years_experience||0)+" años"],["Idiomas",(ext.languages||[]).join(", ")||"—"]].map(([l,v])=>`
+            <div class="glass-light rounded-xl p-3">
+              <p class="text-xs text-muted mb-1">${l}</p>
+              <p class="text-sm font-semibold text-light truncate">${v}</p>
+            </div>`).join("")}
+          </div>
+          <div class="flex flex-wrap gap-2">
+            ${(ext.skills||[]).slice(0,12).map(s=>`<span class="badge-muted text-xs px-2 py-1 rounded-full">${s}</span>`).join("")}
+          </div>
+        </div>
+
+        <!-- ATC + HR -->
+        <div class="grid sm:grid-cols-2 gap-4">
+          ${renderScoreCard("Test ATC", atc.score_general||0, atc.veredicto||"", atc.resumen||"", Object.entries(atc.tests||{}).map(([k,v])=>({label:k.replace(/_/g," "),score:v.score})), "blue")}
+          ${renderScoreCard("Revisión HR", hr.score_cv||0, hr.nivel_cv||"", hr.resumen_profesional||"", Object.entries(hr.puntuacion_por_seccion||{}).map(([k,v])=>({label:k.replace(/_/g," "),score:v.score})), "green")}
+        </div>
+
+        <!-- Mejoras + Sueldo + Descargar -->
+        <div class="grid sm:grid-cols-3 gap-4">
+          <div class="glass rounded-2xl p-5 sm:col-span-2">
+            <p class="text-xs font-bold text-red-400 uppercase tracking-wider mb-3">Mejoras urgentes</p>
+            <ul class="space-y-2">${(hr.mejoras_urgentes||[]).map(m=>`
+              <li class="flex gap-2 text-sm text-light/80">
+                <span class="text-red-400 shrink-0 mt-0.5">→</span>${m}
+              </li>`).join("")}</ul>
+            ${(hr.keywords_faltantes||[]).length?`<p class="text-xs font-bold text-yellow-400 uppercase tracking-wider mt-4 mb-2">Keywords faltantes</p>
+            <div class="flex flex-wrap gap-2">${(hr.keywords_faltantes||[]).map(k=>`<span class="badge-yellow text-xs px-2 py-1 rounded-full">${k}</span>`).join("")}</div>`:""}
+          </div>
+          <div class="space-y-3">
+            <div class="glass rounded-2xl p-5">
+              <p class="text-xs text-muted mb-1">Sueldo estimado en Chile</p>
+              <p class="text-sm font-bold text-accent">${hr.recomendacion_salarial||"—"}</p>
+              <p class="text-xs text-muted/60 mt-1">* Estimación referencial basada en datos del mercado. Puede variar según empresa y región.</p>
+            </div>
+            <button id="dl-atc-${data.id}" onclick="downloadReport(${data.id},'atc')" class="btn-primary w-full py-2.5 rounded-xl font-semibold cursor-pointer text-sm flex items-center justify-center gap-2">
+              ${dlIcon()} Reporte ATC
+            </button>
+            <button id="dl-hr-${data.id}" onclick="downloadReport(${data.id},'hr')" class="btn-primary w-full py-2.5 rounded-xl font-semibold cursor-pointer text-sm flex items-center justify-center gap-2">
+              ${dlIcon()} Reporte HR
+            </button>
+            <button id="dl-improve-${data.id}" onclick="downloadImprovedCV(${data.id})" class="w-full py-2.5 rounded-xl font-semibold cursor-pointer text-sm flex items-center justify-center gap-2 glass-light border border-white/10 hover:border-accent/40 text-light transition-all">
+              ${dlIcon()} CV mejorado
+            </button>
+          </div>
+        </div>`;
+      el.classList.remove("hidden");
+    }
+
+    function renderScoreCard(title, score, badge, desc, bars, color) {
+      const c = score>=70?"#22C55E":score>=50?"#FBBF24":"#F87171";
+      const badgeClass = color==="green"?"badge-green":"badge-blue";
+      const offset = 220-(220*score/100);
+      return `<div class="glass rounded-2xl p-6">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <h3 class="font-bold text-light">${title}</h3>
+            <span class="${badgeClass} text-xs px-2 py-0.5 rounded-full mt-1 inline-block">${badge}</span>
+          </div>
+          <svg width="70" height="70" viewBox="0 0 80 80">
+            <circle cx="40" cy="40" r="35" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="8"/>
+            <circle cx="40" cy="40" r="35" fill="none" stroke="${c}" stroke-width="8"
+              stroke-linecap="round" stroke-dasharray="220" stroke-dashoffset="${offset}"
+              transform="rotate(-90 40 40)" style="transition:stroke-dashoffset 1s ease"/>
+            <text x="40" y="45" text-anchor="middle" fill="${c}" font-size="18" font-weight="700"
+              font-family="Space Grotesk">${score}</text>
+          </svg>
+        </div>
+        <p class="text-xs text-muted mb-3">${desc}</p>
+        <div class="space-y-2">
+          ${bars.map(b=>{
+            const bc=b.score>=70?"#22C55E":b.score>=50?"#FBBF24":"#F87171";
+            return `<div class="flex items-center gap-2">
+              <span class="text-xs text-muted w-28 shrink-0 capitalize">${b.label}</span>
+              <div class="flex-1 bg-white/5 rounded-full h-1.5">
+                <div class="h-1.5 rounded-full bar-fill" style="width:${b.score}%;background:${bc}"></div>
+              </div>
+              <span class="text-xs font-bold w-6 text-right" style="color:${bc}">${b.score}</span>
+            </div>`;
+          }).join("")}
+        </div>
+      </div>`;
+    }
+
+    async function downloadReport(cvId, type) {
+      const btnId = `dl-${type}-${cvId}`;
+      const btn = document.getElementById(btnId);
+      const endpoints = { atc: "download-atc", hr: "download-hr" };
+      const orig = btn ? btn.innerHTML : "";
+      if (btn) { btn.disabled = true; btn.innerHTML = `<svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Generando...`; }
+      try {
+        const res = await fetch(`${API}/api/cvs/${cvId}/${endpoints[type]}`, { method: "POST" });
+        if (!res.ok) { const err = await res.json().catch(()=>({})); throw new Error(err.detail || "Error al generar"); }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = `${type.toUpperCase()}_CV${cvId}.docx`; a.click();
+        URL.revokeObjectURL(url);
+      } catch(e) { alert("Error: " + e.message); }
+      if (btn) { btn.disabled = false; btn.innerHTML = orig; }
+    }
+
+    async function downloadImprovedCV(cvId) {
+      const btn = document.getElementById(`dl-improve-${cvId}`);
+      const orig = btn ? btn.innerHTML : "";
+      if (btn) { btn.disabled = true; btn.innerHTML = `<svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Generando (~20s)`; }
+      try {
+        const res = await fetch(`${API}/api/cvs/${cvId}/improve`, { method: "POST" });
+        if (!res.ok) { const err = await res.json().catch(()=>({})); throw new Error(err.detail || "Error al generar"); }
+        const data = await res.json();
+        if (btn) { btn.disabled = false; btn.innerHTML = orig; }
+        showChangesPanel(cvId, data.cambios);
+      } catch(e) {
+        alert("Error: " + e.message);
+        if (btn) { btn.disabled = false; btn.innerHTML = orig; }
+      }
+    }
+
+    function showChangesPanel(cvId, cambios) {
+      const existing = document.getElementById(`changes-panel-${cvId}`);
+      if (existing) existing.remove();
+      const btn = document.getElementById(`dl-improve-${cvId}`);
+      if (!btn) return;
+      const panel = document.createElement("div");
+      panel.id = `changes-panel-${cvId}`;
+      panel.className = "mt-3 rounded-xl border border-accent/30 bg-accent/5 p-4";
+      panel.innerHTML = `
+        <p class="text-xs font-bold text-accent uppercase tracking-wider mb-2">Cambios aplicados</p>
+        <ul class="space-y-1.5 mb-3">
+          ${cambios.map(c => `
+            <li class="flex items-start gap-2 text-xs text-light">
+              <svg class="w-3.5 h-3.5 text-accent mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+              ${c}
+            </li>`).join("")}
+        </ul>
+        <button onclick="downloadImprovedDocx(${cvId})" class="btn-primary w-full py-2 rounded-lg text-xs font-semibold cursor-pointer flex items-center justify-center gap-2">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          Descargar CV mejorado (.docx)
+        </button>`;
+      btn.parentNode.insertBefore(panel, btn.nextSibling);
+    }
+
+    async function downloadImprovedDocx(cvId) {
+      const res = await fetch(`${API}/api/cvs/${cvId}/improve-download`, { method: "POST" });
+      if (!res.ok) { alert("Error al descargar"); return; }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `CV_mejorado.docx`; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    async function loadCVs() {
+      const list = document.getElementById("cv-list");
+      try {
+        const data = await (await fetch(`${API}/api/cvs`)).json();
+        list.innerHTML = data.length ? data.map(cv=>`
+          <div class="glass-light rounded-xl px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3 min-w-0">
+              <svg class="w-4 h-4 text-accent shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/>
+              </svg>
+              <span class="text-sm text-light truncate">${cv.filename}</span>
+            </div>
+            <span class="badge-muted text-xs px-2 py-0.5 rounded-full shrink-0 ml-2">ID ${cv.id}</span>
+          </div>`).join("") : `<p class="text-sm text-muted">No hay CVs aún.</p>`;
+      } catch { list.innerHTML=`<p class="text-sm text-red-400">Error al cargar.</p>`; }
+    }
+
+    async function fillSelect(id) {
+      const sel = document.getElementById(id);
+      try {
+        const data = await (await fetch(`${API}/api/cvs`)).json();
+        sel.innerHTML = `<option value="">— Seleccionar CV —</option>`+data.map(c=>`<option value="${c.id}">${c.filename}</option>`).join("");
+      } catch{}
+    }
+
+    async function fillJobSelect(id) {
+      const sel = document.getElementById(id);
+      try {
+        const data = await (await fetch(`${API}/api/jobs`)).json();
+        sel.innerHTML = `<option value="">— Seleccionar oferta —</option>`+data.map(j=>`<option value="${j.id}">${j.title}</option>`).join("");
+      } catch{}
+    }
+
+    async function createJob() {
+      const title=document.getElementById("job-title").value.trim();
+      const description=document.getElementById("job-desc").value.trim();
+      const requirements=document.getElementById("job-req").value.trim();
+      const msg=document.getElementById("job-msg");
+      if (!title||!description||!requirements){showMsg(msg,"Completa todos los campos");return;}
+      try {
+        const res=await fetch(`${API}/api/jobs`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({title,description,requirements})});
+        const data=await res.json();
+        if (!res.ok) throw new Error(data.detail);
+        showMsg(msg,`✓ Oferta "${data.title}" guardada`);
+        ["job-title","job-desc","job-req"].forEach(i=>document.getElementById(i).value="");
+        loadJobs();
+      } catch(e){showMsg(msg,"Error: "+e.message);}
+    }
+
+    async function loadJobs() {
+      const list=document.getElementById("job-list");
+      try {
+        const data=await (await fetch(`${API}/api/jobs`)).json();
+        list.innerHTML=data.length?data.map(j=>`
+          <div class="glass-light rounded-xl px-4 py-3">
+            <div class="flex justify-between items-start">
+              <span class="text-sm font-semibold text-light">${j.title}</span>
+              <span class="badge-muted text-xs px-2 py-0.5 rounded-full ml-2">ID ${j.id}</span>
+            </div>
+            <p class="text-xs text-muted mt-1 line-clamp-1">${j.description}</p>
+          </div>`).join(""):`<p class="text-sm text-muted">No hay ofertas aún.</p>`;
+      } catch{list.innerHTML=`<p class="text-sm text-red-400">Error.</p>`;}
+    }
+
+    async function runEvaluation() {
+      const cv_id=document.getElementById("eval-cv").value;
+      const job_id=document.getElementById("eval-job").value;
+      const result=document.getElementById("eval-result");
+      const btn=document.getElementById("eval-btn");
+      if (!cv_id||!job_id){alert("Selecciona CV y oferta");return;}
+      setLoading(btn,"Evaluando...");
+      result.classList.add("hidden");
+      try {
+        const res=await fetch(`${API}/api/evaluate`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cv_id:+cv_id,job_id:+job_id})});
+        const data=await res.json();
+        if (!res.ok) throw new Error(data.detail);
+        const fb=JSON.parse(data.feedback);
+        const score=data.score;
+        const c=score>=75?"#22C55E":score>=50?"#FBBF24":"#F87171";
+        const recBadge=fb.recomendacion==="CONTRATAR"?"badge-green":fb.recomendacion==="CONSIDERAR"?"badge-yellow":"badge-red";
+        result.innerHTML=`
+          <div class="glass rounded-2xl p-6">
+            <div class="flex items-start gap-6">
+              <div class="shrink-0 text-center">
+                <svg width="90" height="90" viewBox="0 0 80 80">
+                  <circle cx="40" cy="40" r="35" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="8"/>
+                  <circle cx="40" cy="40" r="35" fill="none" stroke="${c}" stroke-width="8"
+                    stroke-linecap="round" stroke-dasharray="220" stroke-dashoffset="${220-(220*score/100)}"
+                    transform="rotate(-90 40 40)"/>
+                  <text x="40" y="45" text-anchor="middle" fill="${c}" font-size="18" font-weight="700" font-family="Space Grotesk">${score}</text>
+                </svg>
+                <span class="${recBadge} text-xs px-2 py-1 rounded-full mt-2 inline-block">${fb.recomendacion}</span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm text-light/80 mb-4">${fb.resumen}</p>
+                <div class="grid sm:grid-cols-2 gap-4 mb-4">
+                  <div><p class="text-xs text-accent font-bold uppercase tracking-wider mb-2">Fortalezas</p>
+                    <ul class="space-y-1">${(fb.fortalezas||[]).map(f=>`<li class="text-xs text-light/70 flex gap-2"><span class="text-accent shrink-0">✓</span>${f}</li>`).join("")}</ul></div>
+                  <div><p class="text-xs text-red-400 font-bold uppercase tracking-wider mb-2">Debilidades</p>
+                    <ul class="space-y-1">${(fb.debilidades||[]).map(d=>`<li class="text-xs text-light/70 flex gap-2"><span class="text-red-400 shrink-0">✗</span>${d}</li>`).join("")}</ul></div>
+                </div>
+                <div class="glass-light rounded-xl p-4">
+                  <p class="text-xs text-muted mb-1">Comentario final</p>
+                  <p class="text-sm text-light/80">${fb.comentario_final}</p>
+                </div>
+              </div>
+            </div>
+          </div>`;
+        result.classList.remove("hidden");
+      } catch(e){result.innerHTML=`<div class="glass rounded-2xl p-6"><p class="text-red-400 text-sm">${e.message}</p></div>`;result.classList.remove("hidden");}
+      resetBtn(btn,"Evaluar con Claude AI");
+    }
+
+    async function runATC() {
+      const cv_id=document.getElementById("atc-cv").value;
+      const result=document.getElementById("atc-result");
+      const btn=document.getElementById("atc-btn");
+      if (!cv_id){alert("Selecciona un CV");return;}
+      setLoading(btn,"Analizando...");
+      result.classList.add("hidden");
+      try {
+        const res=await fetch(`${API}/api/cvs/${cv_id}/atc`,{method:"POST"});
+        const data=await res.json();
+        if (!res.ok) throw new Error(data.detail);
+        const vColor=data.veredicto?.includes("MUY PROBABLE")?"badge-green":data.veredicto?.includes("PROBABLE")?"badge-blue":data.veredicto?.includes("INCIERTO")?"badge-yellow":"badge-red";
+        result.innerHTML=`
+          <div class="space-y-4">
+            ${renderScoreCard("Test ATC",data.score_general||0,data.veredicto||"",data.resumen||"",Object.entries(data.tests||{}).map(([k,v])=>({label:k.replace(/_/g," "),score:v.score})),"blue")}
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div class="glass rounded-2xl p-5">
+                <p class="text-xs text-accent font-bold uppercase tracking-wider mb-3">Fortalezas ATC</p>
+                <ul class="space-y-2">${(data.fortalezas_atc||[]).map(f=>`<li class="text-sm text-light/80 flex gap-2"><span class="text-accent shrink-0">✓</span>${f}</li>`).join("")}</ul>
+              </div>
+              <div class="glass rounded-2xl p-5">
+                <p class="text-xs text-yellow-400 font-bold uppercase tracking-wider mb-3">Cómo prepararse</p>
+                <ul class="space-y-2">${(data.recomendaciones_preparacion||[]).map(r=>`<li class="text-sm text-light/80 flex gap-2"><span class="text-yellow-400 shrink-0">→</span>${r}</li>`).join("")}</ul>
+              </div>
+            </div>
+            <button id="dl-atc-${cv_id}" onclick="downloadReport(${cv_id},'atc')" class="btn-primary py-3 px-6 rounded-xl font-semibold cursor-pointer text-sm inline-flex items-center gap-2">
+              ${dlIcon()} Descargar Reporte ATC
+            </button>
+          </div>`;
+        result.classList.remove("hidden");
+      } catch(e){result.innerHTML=`<div class="glass rounded-2xl p-6"><p class="text-red-400 text-sm">${e.message}</p></div>`;result.classList.remove("hidden");}
+      resetBtn(btn,"Analizar con IA");
+    }
+
+    async function runHRReview() {
+      const cv_id=document.getElementById("hr-cv").value;
+      const result=document.getElementById("hr-result");
+      const btn=document.getElementById("hr-btn");
+      if (!cv_id){alert("Selecciona un CV");return;}
+      setLoading(btn,"Revisando CV...");
+      result.classList.add("hidden");
+      try {
+        const res=await fetch(`${API}/api/cvs/${cv_id}/hr-review`,{method:"POST"});
+        const data=await res.json();
+        if (!res.ok) throw new Error(data.detail);
+        result.innerHTML=`
+          <div class="space-y-4">
+            ${renderScoreCard("Revisión HR",data.score_cv||0,data.nivel_cv||"",data.resumen_profesional||"",Object.entries(data.puntuacion_por_seccion||{}).map(([k,v])=>({label:k.replace(/_/g," "),score:v.score})),"green")}
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div class="glass rounded-2xl p-5">
+                <p class="text-xs text-red-400 font-bold uppercase tracking-wider mb-3">Mejoras urgentes</p>
+                <ul class="space-y-2">${(data.mejoras_urgentes||[]).map(m=>`<li class="text-sm text-light/80 flex gap-2"><span class="text-red-400 shrink-0">!</span>${m}</li>`).join("")}</ul>
+                ${(data.keywords_faltantes||[]).length?`<p class="text-xs text-yellow-400 font-bold uppercase tracking-wider mt-4 mb-2">Keywords faltantes</p>
+                <div class="flex flex-wrap gap-2">${(data.keywords_faltantes||[]).map(k=>`<span class="badge-yellow text-xs px-2 py-1 rounded-full">${k}</span>`).join("")}</div>`:""}
+              </div>
+              <div class="space-y-3">
+                <div class="glass rounded-2xl p-4">
+                  <p class="text-xs text-muted mb-1">Sueldo estimado en Chile</p>
+                  <p class="text-sm font-bold text-accent">${data.recomendacion_salarial||"—"}</p>
+                  <p class="text-xs text-muted/60 mt-1">* Estimación referencial basada en datos del mercado. Puede variar según empresa y región.</p>
+                </div>
+                <div class="glass rounded-2xl p-4">
+                  <p class="text-xs text-muted mb-1">Consejo para entrevista</p>
+                  <p class="text-xs text-light/80">${data.consejo_entrevista||""}</p>
+                </div>
+                <button id="dl-hr-${cv_id}" onclick="downloadReport(${cv_id},'hr')" class="btn-primary w-full py-2.5 rounded-xl font-semibold cursor-pointer text-sm flex items-center justify-center gap-2">
+                  ${dlIcon()} Descargar Reporte HR
+                </button>
+                <button id="dl-improve-${cv_id}" onclick="downloadImprovedCV(${cv_id})" class="w-full py-2.5 rounded-xl font-semibold cursor-pointer text-sm flex items-center justify-center gap-2 glass-light border border-white/10 hover:border-accent/40 text-light transition-all">
+                  ${dlIcon()} CV mejorado
+                </button>
+              </div>
+            </div>
+          </div>`;
+        result.classList.remove("hidden");
+      } catch(e){result.innerHTML=`<div class="glass rounded-2xl p-6"><p class="text-red-400 text-sm">${e.message}</p></div>`;result.classList.remove("hidden");}
+      resetBtn(btn,"Revisar CV");
+    }
+
+    async function runJobSearch() {
+      const cv_id=document.getElementById("search-cv").value;
+      const result=document.getElementById("search-result");
+      const btn=document.getElementById("search-btn");
+      if (!cv_id){alert("Selecciona un CV");return;}
+      setLoading(btn,"Buscando en internet...");
+      result.classList.add("hidden");
+      try {
+        const res=await fetch(`${API}/api/cvs/${cv_id}/job-search`,{method:"POST"});
+        const data=await res.json();
+        if (!res.ok) throw new Error(data.detail);
+        const p=data.perfil||{};
+        result.innerHTML=`
+          <div class="space-y-3">
+            <div class="glass rounded-2xl p-4 flex flex-wrap gap-2">
+              <span class="badge-green text-xs px-3 py-1 rounded-full">${p.main_profession||"Profesional"}</span>
+              <span class="badge-blue  text-xs px-3 py-1 rounded-full">${p.years_experience||0} años exp.</span>
+              ${(p.skills||[]).slice(0,5).map(s=>`<span class="badge-muted text-xs px-3 py-1 rounded-full">${s}</span>`).join("")}
+            </div>
+            <p class="text-sm text-muted">${(data.ofertas||[]).length} ofertas encontradas</p>
+            ${(data.ofertas||[]).map(o=>`
+              <a href="${o.url}" target="_blank" rel="noopener" class="glass-light rounded-2xl p-4 flex items-start justify-between gap-4 block hover:border-accent/30 transition-all cursor-pointer" style="border:1px solid transparent">
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-semibold text-light line-clamp-2">${o.titulo}</p>
+                  <p class="text-xs text-muted mt-1 line-clamp-2">${o.descripcion}</p>
+                </div>
+                <span class="badge-muted text-xs px-2 py-1 rounded-full shrink-0">${o.fuente}</span>
+              </a>`).join("")}
+          </div>`;
+        result.classList.remove("hidden");
+      } catch(e){result.innerHTML=`<div class="glass rounded-2xl p-6"><p class="text-red-400 text-sm">${e.message}</p></div>`;result.classList.remove("hidden");}
+      resetBtn(btn,"Buscar ofertas");
+    }
+
+    async function loadHistory() {
+      const list=document.getElementById("history-list");
+      try {
+        const data=await (await fetch(`${API}/api/evaluations`)).json();
+        list.innerHTML=data.length?data.map(ev=>{
+          const c=ev.score>=75?"text-accent":ev.score>=50?"text-yellow-400":"text-red-400";
+          const fb=JSON.parse(ev.feedback||"{}");
+          return `<div class="glass-light rounded-2xl px-5 py-4 flex items-center justify-between">
+            <div>
+              <p class="font-semibold text-light text-sm">${ev.cv_filename}</p>
+              <p class="text-xs text-muted">${ev.job_title}</p>
+              <p class="text-xs text-muted/50 mt-1">${new Date(ev.created_at).toLocaleString("es-CL")}</p>
+            </div>
+            <div class="text-right">
+              <p class="text-2xl font-bold ${c}">${ev.score}</p>
+              <p class="text-xs ${c}">${fb.recomendacion||""}</p>
+            </div>
+          </div>`;
+        }).join(""):`<p class="text-sm text-muted">No hay evaluaciones aún.</p>`;
+      } catch{list.innerHTML=`<p class="text-sm text-red-400">Error.</p>`;}
+    }
+
+    function dlIcon(){return`<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>`;}
+    function showMsg(el,text){el.textContent=text;el.classList.remove("hidden");}
+    function setLoading(btn,text){btn.disabled=true;btn.textContent=text;}
+    function resetBtn(btn,text){btn.disabled=false;btn.textContent=text;}
+
+    loadCVs();
+  </script>
+</body>
+</html>
