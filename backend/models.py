@@ -12,7 +12,7 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255))
     name: Mapped[str] = mapped_column(String(255))
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
     cvs: Mapped[list["CV"]] = relationship(back_populates="user")
 
@@ -24,7 +24,7 @@ class CV(Base):
     user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     filename: Mapped[str] = mapped_column(String(255))
     content: Mapped[str] = mapped_column(Text)
-    uploaded_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
+    uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     atc_cache: Mapped[str | None] = mapped_column(Text, nullable=True)
     hr_cache: Mapped[str | None] = mapped_column(Text, nullable=True)
     extracted_cache: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -41,7 +41,7 @@ class Job(Base):
     title: Mapped[str] = mapped_column(String(255))
     description: Mapped[str] = mapped_column(Text)
     requirements: Mapped[str] = mapped_column(Text)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
     evaluations: Mapped[list["Evaluation"]] = relationship(back_populates="job")
 
@@ -55,7 +55,7 @@ class Evaluation(Base):
     score: Mapped[float] = mapped_column(Float)
     feedback: Mapped[str] = mapped_column(Text)
     extracted_data: Mapped[str] = mapped_column(Text)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
     cv: Mapped["CV"] = relationship(back_populates="evaluations")
     job: Mapped["Job"] = relationship(back_populates="evaluations")
