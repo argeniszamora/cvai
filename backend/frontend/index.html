@@ -732,6 +732,8 @@
         const res=await apiFetch(`/api/cvs/${cv_id}/hr-review`,{method:"POST"});
         const data=await res.json();
         if (!res.ok) throw new Error(data.detail);
+        const cargos=data.cargos_compatibles||[];
+        const colorBar=(p)=>p>=75?"bg-green-500":p>=50?"bg-yellow-500":"bg-red-500";
         result.innerHTML=`
           <div class="space-y-4">
             ${renderScoreCard("Revisión HR",data.score_cv||0,data.nivel_cv||"",data.resumen_profesional||"",Object.entries(data.puntuacion_por_seccion||{}).map(([k,v])=>({label:k.replace(/_/g," "),score:v.score})),"green")}
@@ -760,6 +762,22 @@
                 </button>
               </div>
             </div>
+            ${cargos.length?`
+            <div class="glass rounded-2xl p-5 space-y-4">
+              <p class="text-sm font-bold text-light uppercase tracking-wider">Cargos compatibles con tu perfil</p>
+              ${cargos.map(c=>`
+                <div class="space-y-1">
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="text-sm font-semibold text-light">${c.titulo} <span class="text-xs text-muted font-normal">${c.nivel||""}</span></span>
+                    <span class="text-sm font-bold shrink-0 ${c.probabilidad>=75?"text-green-400":c.probabilidad>=50?"text-yellow-400":"text-red-400"}">${c.probabilidad}%</span>
+                  </div>
+                  <div class="w-full bg-white/10 rounded-full h-1.5">
+                    <div class="${colorBar(c.probabilidad)} h-1.5 rounded-full" style="width:${c.probabilidad}%"></div>
+                  </div>
+                  <p class="text-xs text-muted">${c.razon||""}</p>
+                  ${c.brecha?`<p class="text-xs text-yellow-400/80">⚠ ${c.brecha}</p>`:""}
+                </div>`).join('<div class="border-t border-border my-1"></div>')}
+            </div>`:""}
           </div>`;
         result.classList.remove("hidden");
       } catch(e){result.innerHTML=`<div class="glass rounded-2xl p-6"><p class="text-red-400 text-sm">${e.message}</p></div>`;result.classList.remove("hidden");}
@@ -771,61 +789,31 @@
       const result=document.getElementById("search-result");
       const btn=document.getElementById("search-btn");
       if (!cv_id){alert("Selecciona un CV");return;}
-      setLoading(btn,"Analizando perfil...");
+      setLoading(btn,"Buscando ofertas...");
       result.classList.add("hidden");
       try {
         const res=await apiFetch(`/api/cvs/${cv_id}/job-search`,{method:"POST"});
         let data={}; try{data=await res.json();}catch(_){}
         if (!res.ok) throw new Error(data.detail||`Error ${res.status}`);
         const p=data.perfil||{};
-        const cargos=data.cargos||[];
         const ofertas=data.ofertas||[];
-
-        const colorBar=(pct)=>pct>=75?"bg-green-500":pct>=50?"bg-yellow-500":"bg-red-500";
-        const colorBadge=(pct)=>pct>=75?"badge-green":pct>=50?"badge-yellow":"badge-red";
-
         result.innerHTML=`
-          <div class="space-y-5">
-            <!-- Perfil -->
+          <div class="space-y-4">
             <div class="glass rounded-2xl p-4 flex flex-wrap gap-2">
               <span class="badge-green text-xs px-3 py-1 rounded-full font-semibold">${p.main_profession||"Profesional"}</span>
               <span class="badge-blue text-xs px-3 py-1 rounded-full">${p.years_experience||0} años exp.</span>
-              ${(p.skills||[]).slice(0,5).map(s=>`<span class="badge-muted text-xs px-3 py-1 rounded-full">${s}</span>`).join("")}
+              ${(p.skills||[]).slice(0,4).map(s=>`<span class="badge-muted text-xs px-3 py-1 rounded-full">${s}</span>`).join("")}
             </div>
-
-            <!-- Cargos compatibles -->
-            ${cargos.length?`
-            <div class="glass rounded-2xl p-5 space-y-4">
-              <h3 class="text-base font-bold text-light">Cargos compatibles con tu perfil</h3>
-              ${cargos.map(c=>`
-                <div class="space-y-1">
-                  <div class="flex items-center justify-between gap-2">
-                    <div class="flex-1 min-w-0">
-                      <span class="text-sm font-semibold text-light">${c.titulo}</span>
-                      <span class="ml-2 text-xs text-muted">${c.nivel||""}</span>
-                    </div>
-                    <span class="text-sm font-bold ${c.probabilidad>=75?"text-green-400":c.probabilidad>=50?"text-yellow-400":"text-red-400"} shrink-0">${c.probabilidad}%</span>
-                  </div>
-                  <div class="w-full bg-white/10 rounded-full h-1.5">
-                    <div class="${colorBar(c.probabilidad)} h-1.5 rounded-full transition-all" style="width:${c.probabilidad}%"></div>
-                  </div>
-                  <p class="text-xs text-muted">${c.razon||""}</p>
-                  ${c.brecha?`<p class="text-xs text-yellow-400/80">⚠ ${c.brecha}</p>`:""}
-                </div>`).join('<div class="border-t border-border"></div>')}
-            </div>`:""}
-
-            <!-- Ofertas reales -->
             <div class="glass rounded-2xl p-5 space-y-3">
-              <h3 class="text-base font-bold text-light">Ofertas encontradas en internet <span class="text-muted font-normal text-sm">(${ofertas.length})</span></h3>
+              <p class="text-sm font-bold text-light">Ofertas encontradas <span class="text-muted font-normal">(${ofertas.length})</span></p>
               ${ofertas.length?ofertas.map(o=>`
                 <a href="${o.url}" target="_blank" rel="noopener" class="glass-light rounded-xl p-4 flex items-start justify-between gap-3 block hover:border-accent/40 transition-all cursor-pointer" style="border:1px solid transparent">
                   <div class="flex-1 min-w-0">
                     <p class="text-sm font-semibold text-light line-clamp-2">${o.titulo}</p>
                     <p class="text-xs text-muted mt-1 line-clamp-2">${o.descripcion}</p>
-                    ${o.cargo_relacionado?`<span class="text-xs text-accent/70 mt-1 block">Relacionado con: ${o.cargo_relacionado}</span>`:""}
                   </div>
                   <span class="badge-muted text-xs px-2 py-1 rounded-full shrink-0">${o.fuente}</span>
-                </a>`).join(""):`<p class="text-sm text-muted">No se encontraron ofertas en este momento. Prueba buscar directamente en laborum.cl o trabajando.com</p>`}
+                </a>`).join(""):`<p class="text-sm text-muted">No se encontraron ofertas. Intenta en <a href="https://laborum.cl" target="_blank" class="text-accent underline">laborum.cl</a> o <a href="https://trabajando.com" target="_blank" class="text-accent underline">trabajando.com</a></p>`}
             </div>
           </div>`;
         result.classList.remove("hidden");

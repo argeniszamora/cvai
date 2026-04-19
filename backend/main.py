@@ -270,8 +270,23 @@ async def cv_hr_review(cv_id: int, db: AsyncSession = Depends(get_db)):
     if not cv:
         raise HTTPException(status_code=404, detail="CV no encontrado")
     if cv.hr_cache:
-        return json.loads(cv.hr_cache)
+        cached = json.loads(cv.hr_cache)
+        # Add cargos if not cached yet
+        if "cargos_compatibles" not in cached:
+            extracted = json.loads(cv.extracted_cache) if cv.extracted_cache else {}
+            try:
+                cached["cargos_compatibles"] = analyze_job_fit(cv.content, extracted, cached)
+                cv.hr_cache = json.dumps(cached, ensure_ascii=False)
+                await db.commit()
+            except Exception:
+                cached["cargos_compatibles"] = []
+        return cached
     result = hr_review(cv.content)
+    extracted = json.loads(cv.extracted_cache) if cv.extracted_cache else {}
+    try:
+        result["cargos_compatibles"] = analyze_job_fit(cv.content, extracted, result)
+    except Exception:
+        result["cargos_compatibles"] = []
     cv.hr_cache = json.dumps(result, ensure_ascii=False)
     await db.commit()
     return result
@@ -285,25 +300,11 @@ async def job_search(cv_id: int, db: AsyncSession = Depends(get_db)):
     if not cv:
         raise HTTPException(status_code=404, detail="CV no encontrado")
     extracted = json.loads(cv.extracted_cache) if cv.extracted_cache else extract_cv_data(cv.content)
-    hr = json.loads(cv.hr_cache) if cv.hr_cache else {}
-
-    try:
-        cargos = analyze_job_fit(cv.content, extracted, hr)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error analizando perfil: {str(e)}")
-
-    top_titles = [c["titulo"] for c in cargos[:3]]
-    all_jobs = []
-    seen = set()
-    for title in top_titles:
-        jobs = search_jobs_chile(title, extracted.get("skills", []), extracted.get("years_experience", 0))
-        for j in jobs:
-            if j["url"] not in seen:
-                seen.add(j["url"])
-                j["cargo_relacionado"] = title
-                all_jobs.append(j)
-
-    return {"perfil": extracted, "cargos": cargos, "ofertas": all_jobs[:12]}
+    profession = extracted.get("main_profession", "profesional")
+    skills = extracted.get("skills", [])
+    years_exp = extracted.get("years_experience", 0)
+    offers = search_jobs_chile(profession, skills, years_exp)
+    return {"perfil": extracted, "ofertas": offers}
 
 
 # --- Mejora y descarga CV ---
