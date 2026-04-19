@@ -184,6 +184,21 @@ async def list_jobs(db: AsyncSession = Depends(get_db)):
 
 # --- Evaluaciones ---
 
+@app.post("/api/evaluate-direct", status_code=201)
+async def evaluate_direct(body: dict, db: AsyncSession = Depends(get_db)):
+    cv = await db.get(CV, body.get("cv_id"))
+    if not cv:
+        raise HTTPException(status_code=404, detail="CV no encontrado")
+    title = body.get("title", "")
+    description = body.get("description", "")
+    requirements = body.get("requirements", "")
+    try:
+        result = evaluate_cv(cv.content, title, description, requirements)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error en evaluación: {str(e)}")
+    return {"score": result["score"], "feedback": json.dumps(result, ensure_ascii=False), "cv_filename": cv.filename, "job_title": title}
+
+
 @app.post("/api/evaluate", response_model=EvaluationResponse, status_code=201)
 async def evaluate(body: EvaluateRequest, db: AsyncSession = Depends(get_db)):
     cv = await db.get(CV, body.cv_id)

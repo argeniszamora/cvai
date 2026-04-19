@@ -193,43 +193,25 @@
       <div id="upload-analysis" class="hidden mt-8 space-y-4"></div>
     </div>
 
-    <!-- TAB: Ofertas -->
+    <!-- TAB: Ofertas (oculta, mantenida para compatibilidad) -->
     <div id="tab-content-jobs" class="hidden">
-      <div class="grid lg:grid-cols-2 gap-6">
-        <div class="glass rounded-2xl p-6">
-          <h2 class="text-xl font-bold text-light mb-1">Agregar oferta</h2>
-          <p class="text-sm text-muted mb-5">Pega una oferta a la que quieras postular</p>
-          <div class="space-y-3">
-            <input id="job-title" type="text" placeholder="Título del puesto" class="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-light placeholder-muted focus:outline-none focus:border-accent transition-colors"/>
-            <textarea id="job-desc" rows="3" placeholder="Descripción del cargo..." class="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-light placeholder-muted focus:outline-none focus:border-accent transition-colors resize-none"></textarea>
-            <textarea id="job-req" rows="3" placeholder="Requisitos del cargo..." class="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-light placeholder-muted focus:outline-none focus:border-accent transition-colors resize-none"></textarea>
-            <button onclick="createJob()" class="btn-primary w-full py-3 rounded-xl font-semibold cursor-pointer">Guardar oferta</button>
-            <div id="job-msg" class="hidden text-xs text-center text-muted py-2 rounded-lg glass-light"></div>
-          </div>
-        </div>
-        <div>
-          <div class="flex items-center justify-between mb-3">
-            <h3 class="text-sm font-semibold text-muted uppercase tracking-wider">Ofertas guardadas</h3>
-            <button onclick="loadJobs()" class="text-xs text-accent hover:underline cursor-pointer">Actualizar</button>
-          </div>
-          <div id="job-list" class="space-y-2"></div>
-        </div>
-      </div>
+      <div id="job-list" class="hidden"></div>
+      <div id="job-msg" class="hidden"></div>
     </div>
 
     <!-- TAB: Evaluar -->
     <div id="tab-content-evaluate" class="hidden">
-      <div class="glass rounded-2xl p-6 max-w-xl">
-        <h2 class="text-xl font-bold text-light mb-1">Evaluar CV vs Oferta</h2>
-        <p class="text-sm text-muted mb-5">Claude compara tu CV contra los requisitos del puesto</p>
+      <div class="glass rounded-2xl p-6 max-w-2xl">
+        <h2 class="text-xl font-bold text-light mb-1">¿Qué tan apto estoy para esta oferta?</h2>
+        <p class="text-sm text-muted mb-5">Pega la oferta de trabajo que encontraste y Claude analiza qué tan compatible es tu CV</p>
         <div class="space-y-3">
           <select id="eval-cv" class="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-light focus:outline-none focus:border-accent cursor-pointer">
-            <option value="">— Seleccionar CV —</option>
+            <option value="">— Seleccionar tu CV —</option>
           </select>
-          <select id="eval-job" class="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-light focus:outline-none focus:border-accent cursor-pointer">
-            <option value="">— Seleccionar oferta —</option>
-          </select>
-          <button onclick="runEvaluation()" id="eval-btn" class="btn-primary w-full py-3 rounded-xl font-semibold cursor-pointer">Evaluar con Claude AI</button>
+          <input id="eval-job-title" type="text" placeholder="Título del cargo (ej: Jefe de Marketing)" class="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-light placeholder-muted focus:outline-none focus:border-accent transition-colors"/>
+          <textarea id="eval-job-desc" rows="4" placeholder="Descripción y funciones del cargo (pega aquí el texto de la oferta)..." class="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-light placeholder-muted focus:outline-none focus:border-accent transition-colors resize-none"></textarea>
+          <textarea id="eval-job-req" rows="3" placeholder="Requisitos del cargo (si los tiene por separado)..." class="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-light placeholder-muted focus:outline-none focus:border-accent transition-colors resize-none"></textarea>
+          <button onclick="runEvaluation()" id="eval-btn" class="btn-primary w-full py-3 rounded-xl font-semibold cursor-pointer">Evaluar compatibilidad</button>
         </div>
       </div>
       <div id="eval-result" class="hidden mt-6"></div>
@@ -307,7 +289,7 @@
       active.className = active.className.replace("tab-inactive","tab-active");
       if (name==="upload")    loadCVs();
       if (name==="jobs")      loadJobs();
-      if (name==="evaluate")  { fillSelect("eval-cv"); fillJobSelect("eval-job"); }
+      if (name==="evaluate")  { fillSelect("eval-cv"); }
       if (name==="atc")       fillSelect("atc-cv");
       if (name==="hrreview")  fillSelect("hr-cv");
       if (name==="jobsearch") fillSelect("search-cv");
@@ -640,14 +622,16 @@
 
     async function runEvaluation() {
       const cv_id=document.getElementById("eval-cv").value;
-      const job_id=document.getElementById("eval-job").value;
+      const title=document.getElementById("eval-job-title").value.trim();
+      const desc=document.getElementById("eval-job-desc").value.trim();
+      const req=document.getElementById("eval-job-req").value.trim();
       const result=document.getElementById("eval-result");
       const btn=document.getElementById("eval-btn");
-      if (!cv_id||!job_id){alert("Selecciona CV y oferta");return;}
+      if (!cv_id||!title||!desc){alert("Selecciona un CV, ingresa el título y la descripción del cargo");return;}
       setLoading(btn,"Evaluando...");
       result.classList.add("hidden");
       try {
-        const res=await apiFetch(`/api/evaluate`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cv_id:+cv_id,job_id:+job_id})});
+        const res=await apiFetch(`/api/evaluate-direct`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cv_id:+cv_id,title,description:desc,requirements:req})});
         const data=await res.json();
         if (!res.ok) throw new Error(data.detail);
         const fb=JSON.parse(data.feedback);
