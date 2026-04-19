@@ -226,6 +226,50 @@ PERFIL IDEAL PARA:
     return msg.content[0].text
 
 
+def analyze_job_fit(cv_text: str, extracted: dict, hr_data: dict) -> list[dict]:
+    profession = extracted.get("main_profession", "")
+    skills = extracted.get("skills", [])
+    years_exp = extracted.get("years_experience", 0)
+    education = extracted.get("education", [])
+    positions = extracted.get("previous_positions", [])
+
+    msg = client.messages.create(
+        model=MODEL,
+        max_tokens=2048,
+        messages=[{"role": "user", "content": f"""Eres un experto en recursos humanos del mercado laboral chileno 2026.
+
+Analiza este perfil profesional y genera una lista de cargos a los que podría postular, ordenados de mayor a menor probabilidad de quedar seleccionado.
+
+PERFIL:
+- Profesión: {profession}
+- Años de experiencia: {years_exp}
+- Habilidades: {", ".join(skills[:10])}
+- Educación: {", ".join(education)}
+- Cargos anteriores: {", ".join(positions[:5])}
+
+CV completo:
+{cv_text[:3000]}
+
+Responde SOLO con JSON válido:
+{{
+  "cargos": [
+    {{
+      "titulo": "Nombre exacto del cargo",
+      "probabilidad": 85,
+      "nivel": "Senior | Semi-senior | Junior | Ejecutivo",
+      "razon": "Por qué calza con este cargo en 1 oración",
+      "requisitos_clave": ["requisito 1", "requisito 2", "requisito 3"],
+      "brecha": "Qué le falta o qué tiene de más para este cargo"
+    }}
+  ]
+}}
+
+Incluye entre 6 y 8 cargos distintos con diferentes niveles de probabilidad (desde 95% hasta 40%). Varía los cargos: algunos más altos, algunos laterales, algunos más accesibles."""}],
+    )
+    data = _parse_json(msg.content[0].text)
+    return data.get("cargos", [])
+
+
 def search_jobs_chile(profession: str, skills: list[str], years_exp: int) -> list[dict]:
     top_skills = " ".join(skills[:3]) if skills else ""
     nivel = "junior" if years_exp < 2 else ("senior" if years_exp > 5 else "")

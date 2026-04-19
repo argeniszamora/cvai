@@ -22,7 +22,7 @@ from pathlib import Path
 from database import get_db, init_db
 from models import CV, Job, Evaluation, User
 from schemas import CVResponse, JobCreate, JobResponse, EvaluateRequest, EvaluationResponse
-from claude_service import extract_cv_data, evaluate_cv, evaluate_atc, hr_review, search_jobs_chile, improve_cv
+from claude_service import extract_cv_data, evaluate_cv, evaluate_atc, hr_review, search_jobs_chile, improve_cv, analyze_job_fit
 from auth import hash_password, verify_password, create_token, get_current_user, require_auth, ADMIN_EMAIL
 
 app = FastAPI(title="HR CV Evaluator API", version="1.0.0")
@@ -284,13 +284,26 @@ async def job_search(cv_id: int, db: AsyncSession = Depends(get_db)):
     cv = await db.get(CV, cv_id)
     if not cv:
         raise HTTPException(status_code=404, detail="CV no encontrado")
-    extracted = extract_cv_data(cv.content)
-    jobs = search_jobs_chile(
-        profession=extracted.get("main_profession", "profesional"),
-        skills=extracted.get("skills", []),
-        years_exp=extracted.get("years_experience", 0),
-    )
-    return {"perfil": extracted, "ofertas": jobs}
+    extracted = json.loads(cv.extracted_cache) if cv.extracted_cache else extract_cv_data(cv.content)
+    hr = json.loads(cv.hr_cache) if cv.hr_cache else {}
+
+    try:
+        cargos = analyze_job_fit(cv.content, extracted, hr)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error analizando perfil: {str(e)}")
+
+    top_titles = [c["titulo"] for c in cargos[:3]]
+    all_jobs = []
+    seen = set()
+    for title in top_titles:
+        jobs = search_jobs_chile(title, extracted.get("skills", []), extracted.get("years_experience", 0))
+        for j in jobs:
+            if j["url"] not in seen:
+                seen.add(j["url"])
+                j["cargo_relacionado"] = title
+                all_jobs.append(j)
+
+    return {"perfil": extracted, "cargos": cargos, "ofertas": all_jobs[:12]}
 
 
 # --- Mejora y descarga CV ---
