@@ -125,9 +125,12 @@ async def upload_cv(file: UploadFile = File(...), db: AsyncSession = Depends(get
     await db.commit()
     await db.refresh(cv)
 
-    atc = evaluate_atc(cv.content)
-    hr = hr_review(cv.content)
-    extracted = extract_cv_data(cv.content)
+    try:
+        atc = evaluate_atc(cv.content)
+        hr = hr_review(cv.content)
+        extracted = extract_cv_data(cv.content)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error en análisis IA: {str(e)}")
 
     cv.atc_cache = json.dumps(atc, ensure_ascii=False)
     cv.hr_cache = json.dumps(hr, ensure_ascii=False)
@@ -137,7 +140,7 @@ async def upload_cv(file: UploadFile = File(...), db: AsyncSession = Depends(get
     return {
         "id": cv.id,
         "filename": cv.filename,
-        "uploaded_at": cv.uploaded_at,
+        "uploaded_at": cv.uploaded_at.isoformat() if cv.uploaded_at else None,
         "extracted": extracted,
         "atc": atc,
         "hr_review": hr,

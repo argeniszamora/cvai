@@ -384,9 +384,10 @@
 
       try {
         const res = await apiFetch(`/api/cvs/upload`, { method: "POST", body: form });
-        const data = await res.json();
+        let data = {};
+        try { data = await res.json(); } catch(_) {}
         timers.forEach(clearTimeout);
-        if (!res.ok) throw new Error(data.detail);
+        if (!res.ok) throw new Error(data.detail || data.message || `Error del servidor (${res.status})`);
         ["upload","extract","atc","hr","done"].forEach(s => setStep(s, "done"));
         setProgress(100);
         await new Promise(r => setTimeout(r, 600));
