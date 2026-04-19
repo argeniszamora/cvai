@@ -20,9 +20,10 @@ import os
 from pathlib import Path
 
 from database import get_db, init_db
-from models import CV, Job, Evaluation
+from models import CV, Job, Evaluation, User
 from schemas import CVResponse, JobCreate, JobResponse, EvaluateRequest, EvaluationResponse
 from claude_service import extract_cv_data, evaluate_cv, evaluate_atc, hr_review, search_jobs_chile, improve_cv
+from auth import hash_password, verify_password, create_token, get_current_user, require_auth, ADMIN_EMAIL
 
 app = FastAPI(title="HR CV Evaluator API", version="1.0.0")
 
@@ -53,6 +54,43 @@ async def root():
     return {"message": "HR CV Evaluator API", "docs": "/docs"}
 
 
+# --- Auth ---
+
+@app.post("/api/auth/register", status_code=201)
+async def register(body: dict, db: AsyncSession = Depends(get_db)):
+    email = body.get("email", "").lower().strip()
+    password = body.get("password", "")
+    name = body.get("name", "")
+    if not email or not password or not name:
+        raise HTTPException(status_code=400, detail="Nombre, email y contraseña son requeridos")
+    if len(password) < 6:
+        raise HTTPException(status_code=400, detail="La contraseña debe tener al menos 6 caracteres")
+    existing = await db.execute(select(User).where(User.email == email))
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=409, detail="Este email ya está registrado")
+    user = User(email=email, password_hash=hash_password(password), name=name, is_admin=(email == ADMIN_EMAIL))
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    return {"token": create_token(user.id), "name": user.name, "email": user.email, "is_admin": user.is_admin}
+
+
+@app.post("/api/auth/login")
+async def login(body: dict, db: AsyncSession = Depends(get_db)):
+    email = body.get("email", "").lower().strip()
+    password = body.get("password", "")
+    result = await db.execute(select(User).where(User.email == email))
+    user = result.scalar_one_or_none()
+    if not user or not verify_password(password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Email o contraseña incorrectos")
+    return {"token": create_token(user.id), "name": user.name, "email": user.email, "is_admin": user.is_admin}
+
+
+@app.get("/api/auth/me")
+async def me(user: User = Depends(require_auth)):
+    return {"id": user.id, "name": user.name, "email": user.email, "is_admin": user.is_admin}
+
+
 @app.get("/app")
 async def app_page():
     index = FRONTEND_DIR / "index.html"
@@ -77,12 +115,12 @@ def extract_text(file: UploadFile, content: bytes) -> str:
 # --- CVs ---
 
 @app.post("/api/cvs/upload", status_code=201)
-async def upload_cv(file: UploadFile = File(...), db: AsyncSession = Depends(get_db)):
+async def upload_cv(file: UploadFile = File(...), db: AsyncSession = Depends(get_db), user: User = Depends(require_auth)):
     content = await file.read()
     text = extract_text(file, content)
     if not text.strip():
         raise HTTPException(status_code=422, detail="No se pudo extraer texto del archivo.")
-    cv = CV(filename=file.filename, content=text)
+    cv = CV(filename=file.filename, content=text, user_id=user.id)
     db.add(cv)
     await db.commit()
     await db.refresh(cv)
@@ -107,8 +145,11 @@ async def upload_cv(file: UploadFile = File(...), db: AsyncSession = Depends(get
 
 
 @app.get("/api/cvs", response_model=list[CVResponse])
-async def list_cvs(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(CV).order_by(CV.uploaded_at.desc()))
+async def list_cvs(db: AsyncSession = Depends(get_db), user: User = Depends(require_auth)):
+    if user.is_admin:
+        result = await db.execute(select(CV).order_by(CV.uploaded_at.desc()))
+    else:
+        result = await db.execute(select(CV).where(CV.user_id == user.id).order_by(CV.uploaded_at.desc()))
     return result.scalars().all()
 
 

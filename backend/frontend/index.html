@@ -66,11 +66,31 @@
       </svg>
       <span class="text-lg font-bold text-light tracking-tight" style="font-family:'Space Grotesk',sans-serif">CVAi</span>
     </div>
-    <div class="flex items-center gap-2">
-      <span class="w-2 h-2 rounded-full bg-accent pulse-dot"></span>
-      <span class="text-xs text-muted">Claude AI · Chile</span>
+    <div class="flex items-center gap-3">
+      <span id="nav-user-name" class="text-xs text-muted hidden"></span>
+      <button id="nav-logout" onclick="logout()" class="hidden text-xs text-muted hover:text-white border border-white/10 px-3 py-1.5 rounded-lg cursor-pointer transition-colors">Salir</button>
+      <button id="nav-login" onclick="showAuthModal()" class="btn-primary text-xs px-4 py-1.5 rounded-lg cursor-pointer font-semibold">Iniciar sesión</button>
     </div>
   </nav>
+
+  <!-- Auth Modal -->
+  <div id="auth-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+    <div class="glass rounded-2xl p-8 w-full max-w-sm mx-4 border border-white/10">
+      <div class="flex gap-4 mb-6">
+        <button id="tab-login" onclick="switchTab('login')" class="flex-1 py-2 rounded-xl text-sm font-semibold cursor-pointer bg-accent text-white">Iniciar sesión</button>
+        <button id="tab-register" onclick="switchTab('register')" class="flex-1 py-2 rounded-xl text-sm font-semibold cursor-pointer text-muted hover:text-white transition-colors">Registrarse</button>
+      </div>
+      <div id="auth-error" class="hidden mb-4 text-xs text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2"></div>
+      <form onsubmit="submitAuth(event)" class="space-y-3">
+        <div id="field-name" class="hidden">
+          <input id="auth-name" type="text" placeholder="Tu nombre" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-accent/50"/>
+        </div>
+        <input id="auth-email" type="email" placeholder="Email" required class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-accent/50"/>
+        <input id="auth-password" type="password" placeholder="Contraseña (mín. 6 caracteres)" required class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-accent/50"/>
+        <button type="submit" id="auth-submit" class="btn-primary w-full py-3 rounded-xl text-sm font-semibold cursor-pointer">Entrar</button>
+      </form>
+    </div>
+  </div>
 
   <div class="max-w-5xl mx-auto px-4 py-8">
 
@@ -362,7 +382,7 @@
       });
 
       try {
-        const res = await fetch(`${API}/api/cvs/upload`, { method: "POST", body: form });
+        const res = await apiFetch(`/api/cvs/upload`, { method: "POST", body: form });
         const data = await res.json();
         timers.forEach(clearTimeout);
         if (!res.ok) throw new Error(data.detail);
@@ -488,7 +508,7 @@
       const orig = btn ? btn.innerHTML : "";
       if (btn) { btn.disabled = true; btn.innerHTML = `<svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Generando...`; }
       try {
-        const res = await fetch(`${API}/api/cvs/${cvId}/${endpoints[type]}`, { method: "POST" });
+        const res = await apiFetch(`/api/cvs/${cvId}/${endpoints[type]}`, { method: "POST" });
         if (!res.ok) { const err = await res.json().catch(()=>({})); throw new Error(err.detail || "Error al generar"); }
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
@@ -504,7 +524,7 @@
       const orig = btn ? btn.innerHTML : "";
       if (btn) { btn.disabled = true; btn.innerHTML = `<svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Generando (~20s)`; }
       try {
-        const res = await fetch(`${API}/api/cvs/${cvId}/improve`, { method: "POST" });
+        const res = await apiFetch(`/api/cvs/${cvId}/improve`, { method: "POST" });
         if (!res.ok) { const err = await res.json().catch(()=>({})); throw new Error(err.detail || "Error al generar"); }
         const data = await res.json();
         if (btn) { btn.disabled = false; btn.innerHTML = orig; }
@@ -540,7 +560,7 @@
     }
 
     async function downloadImprovedDocx(cvId) {
-      const res = await fetch(`${API}/api/cvs/${cvId}/improve-download`, { method: "POST" });
+      const res = await apiFetch(`/api/cvs/${cvId}/improve-download`, { method: "POST" });
       if (!res.ok) { alert("Error al descargar"); return; }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
@@ -552,7 +572,7 @@
     async function loadCVs() {
       const list = document.getElementById("cv-list");
       try {
-        const data = await (await fetch(`${API}/api/cvs`)).json();
+        const data = await (await apiFetch(`/api/cvs`)).json();
         list.innerHTML = data.length ? data.map(cv=>`
           <div class="glass-light rounded-xl px-4 py-3 flex items-center justify-between">
             <div class="flex items-center gap-3 min-w-0">
@@ -569,7 +589,7 @@
     async function fillSelect(id) {
       const sel = document.getElementById(id);
       try {
-        const data = await (await fetch(`${API}/api/cvs`)).json();
+        const data = await (await apiFetch(`/api/cvs`)).json();
         sel.innerHTML = `<option value="">— Seleccionar CV —</option>`+data.map(c=>`<option value="${c.id}">${c.filename}</option>`).join("");
       } catch{}
     }
@@ -577,7 +597,7 @@
     async function fillJobSelect(id) {
       const sel = document.getElementById(id);
       try {
-        const data = await (await fetch(`${API}/api/jobs`)).json();
+        const data = await (await apiFetch(`/api/jobs`)).json();
         sel.innerHTML = `<option value="">— Seleccionar oferta —</option>`+data.map(j=>`<option value="${j.id}">${j.title}</option>`).join("");
       } catch{}
     }
@@ -589,7 +609,7 @@
       const msg=document.getElementById("job-msg");
       if (!title||!description||!requirements){showMsg(msg,"Completa todos los campos");return;}
       try {
-        const res=await fetch(`${API}/api/jobs`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({title,description,requirements})});
+        const res=await apiFetch(`/api/jobs`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({title,description,requirements})});
         const data=await res.json();
         if (!res.ok) throw new Error(data.detail);
         showMsg(msg,`✓ Oferta "${data.title}" guardada`);
@@ -601,7 +621,7 @@
     async function loadJobs() {
       const list=document.getElementById("job-list");
       try {
-        const data=await (await fetch(`${API}/api/jobs`)).json();
+        const data=await (await apiFetch(`/api/jobs`)).json();
         list.innerHTML=data.length?data.map(j=>`
           <div class="glass-light rounded-xl px-4 py-3">
             <div class="flex justify-between items-start">
@@ -622,7 +642,7 @@
       setLoading(btn,"Evaluando...");
       result.classList.add("hidden");
       try {
-        const res=await fetch(`${API}/api/evaluate`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cv_id:+cv_id,job_id:+job_id})});
+        const res=await apiFetch(`/api/evaluate`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cv_id:+cv_id,job_id:+job_id})});
         const data=await res.json();
         if (!res.ok) throw new Error(data.detail);
         const fb=JSON.parse(data.feedback);
@@ -670,7 +690,7 @@
       setLoading(btn,"Analizando...");
       result.classList.add("hidden");
       try {
-        const res=await fetch(`${API}/api/cvs/${cv_id}/atc`,{method:"POST"});
+        const res=await apiFetch(`/api/cvs/${cv_id}/atc`,{method:"POST"});
         const data=await res.json();
         if (!res.ok) throw new Error(data.detail);
         const vColor=data.veredicto?.includes("MUY PROBABLE")?"badge-green":data.veredicto?.includes("PROBABLE")?"badge-blue":data.veredicto?.includes("INCIERTO")?"badge-yellow":"badge-red";
@@ -704,7 +724,7 @@
       setLoading(btn,"Revisando CV...");
       result.classList.add("hidden");
       try {
-        const res=await fetch(`${API}/api/cvs/${cv_id}/hr-review`,{method:"POST"});
+        const res=await apiFetch(`/api/cvs/${cv_id}/hr-review`,{method:"POST"});
         const data=await res.json();
         if (!res.ok) throw new Error(data.detail);
         result.innerHTML=`
@@ -749,7 +769,7 @@
       setLoading(btn,"Buscando en internet...");
       result.classList.add("hidden");
       try {
-        const res=await fetch(`${API}/api/cvs/${cv_id}/job-search`,{method:"POST"});
+        const res=await apiFetch(`/api/cvs/${cv_id}/job-search`,{method:"POST"});
         const data=await res.json();
         if (!res.ok) throw new Error(data.detail);
         const p=data.perfil||{};
@@ -778,7 +798,7 @@
     async function loadHistory() {
       const list=document.getElementById("history-list");
       try {
-        const data=await (await fetch(`${API}/api/evaluations`)).json();
+        const data=await (await apiFetch(`/api/evaluations`)).json();
         list.innerHTML=data.length?data.map(ev=>{
           const c=ev.score>=75?"text-accent":ev.score>=50?"text-yellow-400":"text-red-400";
           const fb=JSON.parse(ev.feedback||"{}");
@@ -802,7 +822,103 @@
     function setLoading(btn,text){btn.disabled=true;btn.textContent=text;}
     function resetBtn(btn,text){btn.disabled=false;btn.textContent=text;}
 
-    loadCVs();
+    // --- AUTH ---
+    let authMode = "login";
+    let currentUser = null;
+
+    function getToken() { return localStorage.getItem("cvai_token"); }
+
+    function authHeaders() {
+      const t = getToken();
+      return t ? { "Authorization": `Bearer ${t}`, "Content-Type": "application/json" } : { "Content-Type": "application/json" };
+    }
+
+    function apiFetch(url, opts = {}) {
+      const t = getToken();
+      opts.headers = { ...(opts.headers || {}), ...(t ? { "Authorization": `Bearer ${t}` } : {}) };
+      return fetch(API + url, opts);
+    }
+
+    function switchTab(mode) {
+      authMode = mode;
+      const isLogin = mode === "login";
+      document.getElementById("tab-login").className = `flex-1 py-2 rounded-xl text-sm font-semibold cursor-pointer ${isLogin ? "bg-accent text-white" : "text-muted hover:text-white transition-colors"}`;
+      document.getElementById("tab-register").className = `flex-1 py-2 rounded-xl text-sm font-semibold cursor-pointer ${!isLogin ? "bg-accent text-white" : "text-muted hover:text-white transition-colors"}`;
+      document.getElementById("field-name").className = isLogin ? "hidden" : "";
+      document.getElementById("auth-submit").textContent = isLogin ? "Entrar" : "Crear cuenta";
+      document.getElementById("auth-error").classList.add("hidden");
+    }
+
+    function showAuthModal() {
+      document.getElementById("auth-modal").classList.remove("hidden");
+    }
+
+    function hideAuthModal() {
+      document.getElementById("auth-modal").classList.add("hidden");
+    }
+
+    async function submitAuth(e) {
+      e.preventDefault();
+      const btn = document.getElementById("auth-submit");
+      const errEl = document.getElementById("auth-error");
+      const email = document.getElementById("auth-email").value;
+      const password = document.getElementById("auth-password").value;
+      const name = document.getElementById("auth-name").value;
+      btn.disabled = true; btn.textContent = "Procesando...";
+      errEl.classList.add("hidden");
+      try {
+        const url = authMode === "login" ? "/api/auth/login" : "/api/auth/register";
+        const body = authMode === "login" ? { email, password } : { email, password, name };
+        const res = await fetch(API + url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "Error");
+        localStorage.setItem("cvai_token", data.token);
+        currentUser = data;
+        updateNavAuth();
+        hideAuthModal();
+        loadCVs();
+      } catch(err) {
+        errEl.textContent = err.message;
+        errEl.classList.remove("hidden");
+      }
+      btn.disabled = false;
+      btn.textContent = authMode === "login" ? "Entrar" : "Crear cuenta";
+    }
+
+    function updateNavAuth() {
+      if (currentUser) {
+        document.getElementById("nav-user-name").textContent = currentUser.name;
+        document.getElementById("nav-user-name").classList.remove("hidden");
+        document.getElementById("nav-logout").classList.remove("hidden");
+        document.getElementById("nav-login").classList.add("hidden");
+      } else {
+        document.getElementById("nav-user-name").classList.add("hidden");
+        document.getElementById("nav-logout").classList.add("hidden");
+        document.getElementById("nav-login").classList.remove("hidden");
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem("cvai_token");
+      currentUser = null;
+      updateNavAuth();
+      showAuthModal();
+    }
+
+    async function initAuth() {
+      const token = getToken();
+      if (!token) { showAuthModal(); return; }
+      try {
+        const res = await fetch(API + "/api/auth/me", { headers: { "Authorization": `Bearer ${token}` } });
+        if (!res.ok) { localStorage.removeItem("cvai_token"); showAuthModal(); return; }
+        currentUser = await res.json();
+        updateNavAuth();
+        hideAuthModal();
+        loadCVs();
+      } catch { showAuthModal(); }
+    }
+
+    initAuth();
   </script>
 </body>
 </html>
